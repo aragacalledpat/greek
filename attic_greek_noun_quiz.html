@@ -1,0 +1,350 @@
+<style>
+  .quiz-wrap { padding: 1.5rem 0; max-width: 560px; }
+  select { width: 100%; margin-bottom: 1rem; }
+  .mode-btn-wrap { display: flex; gap: 8px; margin-bottom: 1rem; }
+  .mode-btn { flex: 1; padding: 8px; font-size: 13px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #666; cursor: pointer; }
+  .mode-btn.active { border-color: #999; color: #111; font-weight: 500; background: #f5f5f5; }
+  .option-row { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; font-size: 13px; color: #555; }
+  .option-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .word-display { font-size: 48px; font-weight: 500; text-align: center; letter-spacing: 2px; margin: 1.5rem 0; color: #111; }
+  .prompt-label { font-size: 16px; text-align: center; color: #666; margin-bottom: 1rem; }
+  .question-label { font-size: 13px; color: #666; margin-bottom: 8px; }
+  .choices { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+  .choice-btn { padding: 6px 14px; font-size: 14px; border-radius: 8px; border: 0.5px solid #ccc; background: #fff; color: #111; cursor: pointer; }
+  .choice-btn:hover { background: #f5f5f5; }
+  .choice-btn.correct { background: #e6f4ea; color: #1e7e34; border-color: #a8d5b5; }
+  .choice-btn.wrong { background: #fdecea; color: #b71c1c; border-color: #f5b7b1; }
+  .choice-btn.reveal { background: #e8f0fe; color: #1a56db; border-color: #a4c2f4; }
+  .choice-btn:disabled { cursor: default; }
+  .feedback { font-size: 13px; min-height: 20px; margin-top: 4px; color: #666; font-style: italic; }
+  .score { font-size: 13px; color: #888; text-align: right; margin-top: 1.5rem; }
+  .meta-tag { font-size: 12px; color: #aaa; text-align: center; margin-bottom: 0.5rem; }
+  .next-btn { margin-top: 1.5rem; width: 100%; }
+  .divider { border: none; border-top: 0.5px solid #e0e0e0; margin: 1.5rem 0; }
+  .q-block { margin-top: 1rem; }
+</style>
+
+<div class="quiz-wrap">
+  <div class="question-label">Choose a word</div>
+  <select id="word-select">
+    <option value="">— pick a word —</option>
+    <option value="logos">λόγος, λόγου (m.) — word, reason</option>
+    <option value="anthropos">ἄνθρωπος, ἀνθρώπου (m.) — human being</option>
+    <option value="techne">τέχνη, τέχνης (f.) — art, craft</option>
+    <option value="doron">δῶρον, δώρου (n.) — gift, bribe</option>
+  </select>
+
+  <div class="mode-btn-wrap">
+    <button class="mode-btn active" id="mode-id" onclick="setMode('identify')">Identify the form</button>
+    <button class="mode-btn" id="mode-prod" onclick="setMode('produce')">Produce the form</button>
+  </div>
+
+  <div class="option-row">
+    <label><input type="checkbox" id="opt-plurals"> Include plurals</label>
+  </div>
+
+  <div id="quiz-area" style="display:none;">
+    <div class="word-display" id="declined-form"></div>
+    <div class="meta-tag" id="meta-tag"></div>
+    <hr class="divider">
+
+    <div id="intro-phase">
+      <div class="q-block">
+        <div class="question-label">Gender</div>
+        <div class="choices" id="choices-gender"></div>
+        <div class="feedback" id="fb-gender"></div>
+      </div>
+      <div class="q-block">
+        <div class="question-label">Declension</div>
+        <div class="choices" id="choices-declension"></div>
+        <div class="feedback" id="fb-declension"></div>
+      </div>
+      <button class="choice-btn next-btn" id="intro-next-btn" style="display:none;">Start drilling →</button>
+    </div>
+
+    <div id="drill-phase" style="display:none;">
+      <div class="prompt-label" id="drill-prompt"></div>
+      <div class="q-block">
+        <div class="question-label" id="case-label" style="display:none;">Case</div>
+        <div class="choices" id="choices-case"></div>
+        <div class="feedback" id="fb-case"></div>
+      </div>
+      <div class="q-block" id="number-block" style="display:none; margin-top:1rem;">
+        <div class="question-label">Number</div>
+        <div class="choices" id="choices-number"></div>
+        <div class="feedback" id="fb-number"></div>
+      </div>
+      <button class="choice-btn next-btn" id="drill-next-btn" style="display:none;">Next →</button>
+      <div class="score" id="score-display"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const words = {
+  logos: {
+    lemma: 'λόγος', gender: 'masculine', declension: '2nd',
+    forms: {
+      sg: { nominative:'λόγος', genitive:'λόγου', dative:'λόγῳ', accusative:'λόγον', vocative:'λόγε' },
+      pl: { nominative:'λόγοι', genitive:'λόγων', dative:'λόγοις', accusative:'λόγους', vocative:'λόγοι' }
+    }
+  },
+  anthropos: {
+    lemma: 'ἄνθρωπος', gender: 'masculine', declension: '2nd',
+    forms: {
+      sg: { nominative:'ἄνθρωπος', genitive:'ἀνθρώπου', dative:'ἀνθρώπῳ', accusative:'ἄνθρωπον', vocative:'ἄνθρωπε' },
+      pl: { nominative:'ἄνθρωποι', genitive:'ἀνθρώπων', dative:'ἀνθρώποις', accusative:'ἀνθρώπους', vocative:'ἄνθρωποι' }
+    }
+  },
+  techne: {
+    lemma: 'τέχνη', gender: 'feminine', declension: '1st',
+    forms: {
+      sg: { nominative:'τέχνη', genitive:'τέχνης', dative:'τέχνῃ', accusative:'τέχνην', vocative:'τέχνη' },
+      pl: { nominative:'τέχναι', genitive:'τεχνῶν', dative:'τέχναις', accusative:'τέχνας', vocative:'τέχναι' }
+    }
+  },
+  doron: {
+    lemma: 'δῶρον', gender: 'neuter', declension: '2nd',
+    forms: {
+      sg: { nominative:'δῶρον', genitive:'δώρου', dative:'δώρῳ', accusative:'δῶρον', vocative:'δῶρον' },
+      pl: { nominative:'δῶρα', genitive:'δώρων', dative:'δώροις', accusative:'δῶρα', vocative:'δῶρα' }
+    }
+  }
+};
+
+const genderOpts = ['masculine','feminine','neuter'];
+const declOpts = ['1st','2nd'];
+const caseOpts = ['nominative','genitive','dative','accusative','vocative'];
+const numberOpts = ['singular','plural'];
+
+// returns all [number, case] pairs that match the given form
+function ambiguousMatches(w, num, cas, includePlurals) {
+  const form = w.forms[num][cas];
+  const nums = includePlurals ? ['sg','pl'] : ['sg'];
+  const matches = [];
+  for (const n of nums) {
+    for (const c of caseOpts) {
+      if (w.forms[n][c] === form) matches.push({num: n, cas: c});
+    }
+  }
+  return matches;
+}
+
+let word, mode = 'identify', score = 0, total = 0;
+let gAnswered = false, dAnswered = false;
+let caseAnswered = false, numberAnswered = false;
+let currentMatches = [];
+
+function includePlurals() { return document.getElementById('opt-plurals').checked; }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function shuffle(arr) {
+  let a=[...arr]; for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a;
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('mode-id').classList.toggle('active', m==='identify');
+  document.getElementById('mode-prod').classList.toggle('active', m==='produce');
+  const sel = document.getElementById('word-select').value;
+  if (sel) { word = words[sel]; resetScore(); startIntro(); }
+}
+
+function resetScore() { score = 0; total = 0; document.getElementById('score-display').textContent = ''; }
+
+function renderButtons(containerId, options, onAnswer) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = '';
+  shuffle(options).forEach(opt => {
+    const b = document.createElement('button');
+    b.className = 'choice-btn';
+    b.textContent = opt;
+    b.onclick = () => onAnswer(opt, b, c);
+    c.appendChild(b);
+  });
+}
+
+function lockButtons(container, validSet, chosen) {
+  container.querySelectorAll('button').forEach(b => {
+    b.disabled = true;
+    if (validSet.includes(b.textContent)) b.classList.add(chosen === b.textContent ? 'correct' : 'reveal');
+  });
+}
+
+function handleSingle(chosen, correct, btn, container, fbId) {
+  const fb = document.getElementById(fbId);
+  container.querySelectorAll('button').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct) b.classList.add(chosen === correct ? 'correct' : 'reveal');
+  });
+  const ok = chosen === correct;
+  if (ok) { btn.classList.add('correct'); fb.textContent = 'Correct.'; fb.style.color = '#1e7e34'; }
+  else { btn.classList.add('wrong'); fb.textContent = `Not quite — it's ${correct}.`; fb.style.color = '#b71c1c'; }
+  return ok;
+}
+
+function checkIntrosDone() {
+  if (gAnswered && dAnswered) document.getElementById('intro-next-btn').style.display = 'block';
+}
+
+function startIntro() {
+  gAnswered = dAnswered = false;
+  document.getElementById('declined-form').textContent = word.forms.sg['nominative'];
+  document.getElementById('meta-tag').textContent = word.lemma;
+  document.getElementById('quiz-area').style.display = 'block';
+  document.getElementById('intro-phase').style.display = 'block';
+  document.getElementById('drill-phase').style.display = 'none';
+  document.getElementById('intro-next-btn').style.display = 'none';
+  document.getElementById('fb-gender').textContent = '';
+  document.getElementById('fb-declension').textContent = '';
+
+  renderButtons('choices-gender', genderOpts, (chosen, btn, c) => {
+    if (gAnswered) return; gAnswered = true;
+    handleSingle(chosen, word.gender, btn, c, 'fb-gender'); checkIntrosDone();
+  });
+  renderButtons('choices-declension', declOpts, (chosen, btn, c) => {
+    if (dAnswered) return; dAnswered = true;
+    handleSingle(chosen, word.declension, btn, c, 'fb-declension'); checkIntrosDone();
+  });
+}
+
+function checkDrillDone() {
+  const withPlurals = includePlurals();
+  const cDone = caseAnswered;
+  const nDone = !withPlurals || numberAnswered;
+  if (!cDone || !nDone) return;
+
+  // score: correct if chosen case+number combo is in valid matches
+  // already handled per-question; just show next
+  document.getElementById('drill-next-btn').style.display = 'block';
+}
+
+function startDrillRound() {
+  caseAnswered = false; numberAnswered = false;
+  document.getElementById('drill-next-btn').style.display = 'none';
+  document.getElementById('fb-case').textContent = '';
+  document.getElementById('fb-number').textContent = '';
+  const withPlurals = includePlurals();
+
+  if (mode === 'identify') {
+    const nums = withPlurals ? ['sg','pl'] : ['sg'];
+    const targetNum = pick(nums);
+    const targetCase = pick(caseOpts);
+    const form = word.forms[targetNum][targetCase];
+    const matches = ambiguousMatches(word, targetNum, targetCase, withPlurals);
+    const validCases = [...new Set(matches.map(m => m.cas))];
+    const validNums = [...new Set(matches.map(m => m.num === 'sg' ? 'singular' : 'plural'))];
+    currentMatches = matches;
+
+    document.getElementById('declined-form').textContent = form;
+    document.getElementById('meta-tag').textContent = `from ${word.lemma} · ${word.gender} · ${word.declension} declension`;
+    document.getElementById('drill-prompt').textContent = 'Identify this form:';
+    document.getElementById('case-label').style.display = 'block';
+    document.getElementById('number-block').style.display = withPlurals ? 'block' : 'none';
+
+    let cOk = false, nOk = false;
+
+    renderButtons('choices-case', caseOpts, (chosen, btn, container) => {
+      if (caseAnswered) return; caseAnswered = true;
+      cOk = validCases.includes(chosen);
+      lockButtons(container, validCases, chosen);
+      if (!cOk) btn.classList.add('wrong');
+      const fb = document.getElementById('fb-case');
+      if (cOk) {
+        fb.style.color = '#1e7e34';
+        fb.textContent = validCases.length > 1 ? `Correct — ambiguous: could be ${validCases.join(' or ')}.` : 'Correct.';
+      } else {
+        fb.style.color = '#b71c1c';
+        fb.textContent = validCases.length > 1 ? `Not quite — could be ${validCases.join(' or ')}.` : `Not quite — it's ${validCases[0]}.`;
+      }
+      if (!withPlurals) { if (cOk) score++; total++; document.getElementById('score-display').textContent = `Score: ${score} / ${total}`; }
+      checkDrillDone();
+    });
+
+    if (withPlurals) {
+      renderButtons('choices-number', numberOpts, (chosen, btn, container) => {
+        if (numberAnswered) return; numberAnswered = true;
+        nOk = validNums.includes(chosen);
+        lockButtons(container, validNums, chosen);
+        if (!nOk) btn.classList.add('wrong');
+        const fb = document.getElementById('fb-number');
+        if (nOk) {
+          fb.style.color = '#1e7e34';
+          fb.textContent = validNums.length > 1 ? `Correct — ambiguous: could be ${validNums.join(' or ')}.` : 'Correct.';
+        } else {
+          fb.style.color = '#b71c1c';
+          fb.textContent = validNums.length > 1 ? `Not quite — could be ${validNums.join(' or ')}.` : `Not quite — it's ${validNums[0]}.`;
+        }
+        // score after both answered
+        setTimeout(() => {
+          if (caseAnswered) {
+            if (cOk && nOk) score++;
+            total++;
+            document.getElementById('score-display').textContent = `Score: ${score} / ${total}`;
+          }
+        }, 0);
+        checkDrillDone();
+      });
+    }
+
+  } else {
+    // produce mode
+    const withPlurals = includePlurals();
+    const nums = withPlurals ? ['sg','pl'] : ['sg'];
+    const targetNum = pick(nums);
+    const targetCase = pick(caseOpts);
+    const correctForm = word.forms[targetNum][targetCase];
+    const matches = ambiguousMatches(word, targetNum, targetCase, withPlurals);
+    const validForms = [...new Set(matches.map(m => word.forms[m.num][m.cas]))];
+
+    // unique forms across all active numbers
+    const allForms = [...new Set(nums.flatMap(n => Object.values(word.forms[n])))];
+
+    const numLabel = targetNum === 'sg' ? 'singular' : 'plural';
+    document.getElementById('declined-form').textContent = word.lemma;
+    document.getElementById('meta-tag').textContent = `${word.gender} · ${word.declension} declension`;
+    document.getElementById('drill-prompt').textContent = withPlurals
+      ? `Give the ${targetCase} ${numLabel}:`
+      : `Give the ${targetCase}:`;
+    document.getElementById('case-label').style.display = 'none';
+    document.getElementById('number-block').style.display = 'none';
+
+    renderButtons('choices-case', allForms, (chosen, btn, container) => {
+      if (caseAnswered) return; caseAnswered = true;
+      const ok = validForms.includes(chosen);
+      container.querySelectorAll('button').forEach(b => {
+        b.disabled = true;
+        if (validForms.includes(b.textContent)) b.classList.add('correct');
+      });
+      if (!ok) btn.classList.add('wrong');
+      const fb = document.getElementById('fb-case');
+      if (ok) {
+        fb.style.color = '#1e7e34';
+        fb.textContent = validForms.length > 1 ? `Correct — this form serves multiple cases/numbers.` : 'Correct.';
+      } else {
+        fb.style.color = '#b71c1c';
+        fb.textContent = `Not quite — the ${targetCase} ${numLabel} is ${correctForm}.`;
+      }
+      if (ok) score++; total++;
+      document.getElementById('score-display').textContent = `Score: ${score} / ${total}`;
+      document.getElementById('drill-next-btn').style.display = 'block';
+    });
+  }
+}
+
+document.getElementById('intro-next-btn').onclick = () => {
+  document.getElementById('intro-phase').style.display = 'none';
+  document.getElementById('drill-phase').style.display = 'block';
+  startDrillRound();
+};
+document.getElementById('drill-next-btn').onclick = startDrillRound;
+document.getElementById('word-select').onchange = () => {
+  const sel = document.getElementById('word-select').value;
+  if (!sel) return;
+  word = words[sel]; resetScore(); startIntro();
+};
+document.getElementById('opt-plurals').onchange = () => {
+  const sel = document.getElementById('word-select').value;
+  if (!sel) return;
+  resetScore(); startDrillRound();
+};
+</script>
