@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Greek Games</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #fafafa;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 480px;
+      width: 100%;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .greek-title {
+      font-size: 42px;
+      letter-spacing: 4px;
+      color: #111;
+      margin-bottom: 0.4rem;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #999;
+      letter-spacing: 0.5px;
+    }
+
+    .divider {
+      border: none;
+      border-top: 0.5px solid #e0e0e0;
+      margin: 0 0 2rem 0;
+    }
+
+    .games-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #bbb;
+      margin-bottom: 1rem;
+    }
+
+    .game-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .game-card {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.1rem 1.25rem;
+      background: #fff;
+      border: 0.5px solid #ddd;
+      border-radius: 12px;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+      cursor: pointer;
+    }
+
+    .game-card:hover {
+      border-color: #bbb;
+      background: #f7f7f7;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .game-icon {
+      font-size: 28px;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f3f3f3;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+
+    .game-info {
+      flex: 1;
+    }
+
+    .game-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: #111;
+      margin-bottom: 2px;
+    }
+
+    .game-desc {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .game-arrow {
+      font-size: 16px;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="greek-title">Ἑλληνικά</div>
+      <div class="subtitle">Greek practice games</div>
+    </div>
+    <hr class="divider" />
+    <div class="games-label">Select a game</div>
+    <div class="game-list">
+      <a class="game-card" href="attic_greek_noun_quiz.html">
+        <div class="game-icon">📖</div>
+        <div class="game-info">
+          <div class="game-name">Noun Quiz</div>
+          <div class="game-desc">Identify and produce Greek noun forms by case, number &amp; gender</div>
+        </div>
+        <div class="game-arrow">›</div>
+      </a>
+      <a class="game-card" href="sentence_game.html">
+        <div class="game-icon">✍️</div>
+        <div class="game-info">
+          <div class="game-name">Sentence Game</div>
+          <div class="game-desc">Translate and build Greek sentences word by word</div>
+        </div>
+        <div class="game-arrow">›</div>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
