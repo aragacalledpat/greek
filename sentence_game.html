@@ -538,7 +538,7 @@ const SENTENCES = [
   }
 ];
 
-let remaining = [];
+let queue = [];
 let current = null;
 let step = "";
 let streak = 0;
@@ -553,17 +553,25 @@ function shuffle(arr) {
   return arr;
 }
 
-function pickSentence() {
-  if (remaining.length === 0) {
-    remaining = shuffle([...Array(SENTENCES.length).keys()]);
+function refillQueue() {
+  const fresh = SENTENCES.slice();
+  shuffle(fresh);
+  if (queue.length === 0 && current) {
+    while (fresh[0] && fresh[0].id === current.id) shuffle(fresh);
   }
-  return SENTENCES[remaining.pop()];
+  queue = fresh;
+}
+
+function pickSentence() {
+  if (queue.length === 0) refillQueue();
+  return queue.pop();
 }
 
 function startGame() {
   document.getElementById("splash").classList.add("hidden");
   document.getElementById("game").classList.remove("hidden");
   document.getElementById("streak").style.display = "block";
+  refillQueue();
   nextSentence();
 }
 
