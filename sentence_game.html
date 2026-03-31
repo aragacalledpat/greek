@@ -3,105 +3,911 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sentence Game — Greek</title>
+  <title>Who Did What? — Greek Sentence Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #fafafa;
+      font-family: 'Nunito', sans-serif;
+      background: #FFF8F0;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 2rem;
+      padding: 1rem;
+      overflow-x: hidden;
     }
 
-    .container {
-      max-width: 560px;
+    .app {
+      max-width: 640px;
       width: 100%;
+      position: relative;
     }
 
     .back-link {
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-size: 13px;
-      color: #999;
+      font-size: 14px;
+      color: #bbb;
       text-decoration: none;
-      margin-bottom: 2rem;
-    }
-
-    .back-link:hover { color: #555; }
-
-    .header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    .title {
-      font-size: 22px;
-      font-weight: 500;
-      color: #111;
-      margin-bottom: 4px;
-    }
-
-    .subtitle {
-      font-size: 13px;
-      color: #aaa;
-    }
-
-    .divider {
-      border: none;
-      border-top: 0.5px solid #e0e0e0;
-      margin: 1.5rem 0;
-    }
-
-    .coming-soon-box {
-      background: #fff;
-      border: 0.5px solid #e0e0e0;
-      border-radius: 14px;
-      padding: 3rem 2rem;
-      text-align: center;
-    }
-
-    .coming-soon-icon {
-      font-size: 48px;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 600;
       margin-bottom: 1rem;
     }
+    .back-link:hover { color: #888; }
 
-    .coming-soon-title {
-      font-size: 18px;
-      font-weight: 500;
-      color: #111;
-      margin-bottom: 0.5rem;
+    /* --- Streak counter --- */
+    .streak {
+      position: fixed;
+      top: 16px;
+      right: 20px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 20px;
+      color: #FF6B35;
+      z-index: 100;
+      display: none;
     }
 
-    .coming-soon-desc {
-      font-size: 13px;
-      color: #aaa;
-      line-height: 1.6;
-      max-width: 320px;
-      margin: 0 auto;
+    /* --- Splash screen --- */
+    .splash {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+    .splash-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 52px;
+      color: #5B3E96;
+      margin-bottom: 0.75rem;
+      line-height: 1.1;
+    }
+    .splash-subtitle {
+      font-size: 18px;
+      color: #888;
+      margin-bottom: 2.5rem;
+      line-height: 1.5;
+    }
+    .splash-btn {
+      font-family: 'Fredoka One', cursive;
+      font-size: 28px;
+      color: #fff;
+      background: linear-gradient(135deg, #FF6B35, #F7C948);
+      border: none;
+      border-radius: 18px;
+      padding: 18px 56px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(255, 107, 53, 0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .splash-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 28px rgba(255, 107, 53, 0.45);
+    }
+    .splash-btn:active { transform: scale(0.97); }
+
+    /* --- Game screen --- */
+    .game { display: none; }
+
+    .greek-sentence {
+      font-family: 'Noto Serif', serif;
+      font-size: 30px;
+      text-align: center;
+      color: #333;
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .greek-sentence .word-inline {
+      transition: color 0.3s;
+    }
+    .greek-sentence .word-inline.subject-done { color: #4CAF50; font-weight: 700; }
+    .greek-sentence .word-inline.object-done { color: #2196F3; font-weight: 700; }
+    .greek-sentence .word-inline.object2-done { color: #2196F3; font-weight: 700; }
+
+    .prompt {
+      font-family: 'Fredoka One', cursive;
+      font-size: 22px;
+      text-align: center;
+      color: #5B3E96;
+      margin-bottom: 1.25rem;
+      line-height: 1.4;
+    }
+    .prompt-detail {
+      font-family: 'Nunito', sans-serif;
+      font-size: 15px;
+      text-align: center;
+      color: #999;
+      margin-top: -0.75rem;
+      margin-bottom: 1.25rem;
+      font-weight: 600;
+    }
+
+    /* --- Word group buttons --- */
+    .word-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .word-btn {
+      font-family: 'Noto Serif', serif;
+      font-size: 24px;
+      background: #fff;
+      color: #333;
+      border: 2.5px solid #e0d8f0;
+      border-radius: 14px;
+      padding: 14px 24px;
+      min-height: 54px;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+      transition: transform 0.12s, border-color 0.2s, background 0.2s, box-shadow 0.2s;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .word-btn:hover:not(:disabled) {
+      transform: scale(1.05);
+      border-color: #c4b8e0;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    .word-btn:active:not(:disabled) { transform: scale(0.97); }
+    .word-btn:disabled { cursor: default; opacity: 1; }
+    .word-btn.correct {
+      background: #E8F5E9;
+      border-color: #4CAF50;
+      color: #2E7D32;
+    }
+    .word-btn.wrong {
+      background: #FFEBEE;
+      border-color: #F44336;
+      color: #C62828;
+      animation: shake 0.4s ease;
+    }
+    .word-btn.grayed {
+      background: #f0f0f0;
+      border-color: #ddd;
+      color: #bbb;
+      cursor: default;
+    }
+    .word-btn.subject-highlight {
+      background: #E8F5E9;
+      border-color: #4CAF50;
+      color: #2E7D32;
+    }
+    .word-btn.object-highlight {
+      background: #E3F2FD;
+      border-color: #2196F3;
+      color: #1565C0;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      15% { transform: translateX(-8px); }
+      30% { transform: translateX(8px); }
+      45% { transform: translateX(-6px); }
+      60% { transform: translateX(6px); }
+      75% { transform: translateX(-3px); }
+      90% { transform: translateX(3px); }
+    }
+
+    /* --- Multiple choice buttons --- */
+    .choices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .choice-btn {
+      font-family: 'Nunito', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      background: #fff;
+      color: #333;
+      border: 2.5px solid #e0d8f0;
+      border-radius: 14px;
+      padding: 14px 28px;
+      min-height: 54px;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+      transition: transform 0.12s, border-color 0.2s, background 0.2s;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .choice-btn:hover:not(:disabled) {
+      transform: scale(1.05);
+      border-color: #c4b8e0;
+    }
+    .choice-btn:active:not(:disabled) { transform: scale(0.97); }
+    .choice-btn:disabled { cursor: default; }
+    .choice-btn.correct {
+      background: #E8F5E9;
+      border-color: #4CAF50;
+      color: #2E7D32;
+    }
+    .choice-btn.wrong {
+      background: #FFEBEE;
+      border-color: #F44336;
+      color: #C62828;
+      animation: shake 0.4s ease;
+    }
+
+    /* --- Feedback --- */
+    .feedback {
+      text-align: center;
+      font-family: 'Fredoka One', cursive;
+      font-size: 24px;
+      min-height: 40px;
+      margin: 0.75rem 0;
+      transition: opacity 0.3s;
+    }
+    .feedback.success { color: #4CAF50; }
+    .feedback.error { color: #F44336; }
+
+    /* --- Translation reveal --- */
+    .translation-box {
+      text-align: center;
+      margin: 1.5rem 0;
+      padding: 1.5rem;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      animation: fadeSlideIn 0.6s ease;
+    }
+    .translation-label {
+      font-family: 'Fredoka One', cursive;
+      font-size: 16px;
+      color: #bbb;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .translation-text {
+      font-size: 26px;
+      font-weight: 700;
+      color: #333;
+      line-height: 1.5;
+    }
+    .translation-text .subj { color: #4CAF50; }
+    .translation-text .obj { color: #2196F3; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .next-btn {
+      display: block;
+      margin: 1.5rem auto 0;
+      font-family: 'Fredoka One', cursive;
+      font-size: 22px;
+      color: #fff;
+      background: linear-gradient(135deg, #5B3E96, #7E57C2);
+      border: none;
+      border-radius: 14px;
+      padding: 16px 48px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(91, 62, 150, 0.3);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .next-btn:hover {
+      transform: scale(1.04);
+      box-shadow: 0 6px 22px rgba(91, 62, 150, 0.4);
+    }
+    .next-btn:active { transform: scale(0.97); }
+
+    /* --- Celebration overlay --- */
+    .celebration-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .celebration-overlay.show {
+      display: flex;
+      animation: fadeSlideIn 0.4s ease;
+    }
+    .celebration-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 2.5rem 3rem;
+      text-align: center;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+      max-width: 400px;
+    }
+    .celebration-icon { font-size: 64px; margin-bottom: 0.5rem; }
+    .celebration-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 32px;
+      color: #5B3E96;
+      margin-bottom: 0.5rem;
+    }
+    .celebration-text {
+      font-size: 18px;
+      color: #888;
+      margin-bottom: 1.5rem;
+    }
+    .celebration-btn {
+      font-family: 'Fredoka One', cursive;
+      font-size: 18px;
+      color: #fff;
+      background: linear-gradient(135deg, #FF6B35, #F7C948);
+      border: none;
+      border-radius: 12px;
+      padding: 12px 36px;
+      cursor: pointer;
+    }
+
+    /* --- Confetti / stars --- */
+    .stars-container {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+      overflow: hidden;
+    }
+    .star {
+      position: absolute;
+      font-size: 28px;
+      animation: starFall 1s ease-out forwards;
+    }
+    @keyframes starFall {
+      0% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+      100% { opacity: 0; transform: translateY(120px) scale(0.3) rotate(180deg); }
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 500px) {
+      .splash-title { font-size: 38px; }
+      .splash-btn { font-size: 22px; padding: 14px 40px; }
+      .greek-sentence { font-size: 24px; }
+      .word-btn { font-size: 20px; padding: 12px 18px; }
+      .prompt { font-size: 18px; }
+      .choice-btn { font-size: 18px; padding: 12px 20px; }
+      .translation-text { font-size: 22px; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <a class="back-link" href="index.html">‹ All games</a>
-    <div class="header">
-      <div class="title">Sentence Game</div>
-      <div class="subtitle">Translate and build Greek sentences</div>
-    </div>
-    <hr class="divider" />
-    <div class="coming-soon-box">
-      <div class="coming-soon-icon">✍️</div>
-      <div class="coming-soon-title">Coming soon</div>
-      <div class="coming-soon-desc">
-        This game is under construction. Check back soon to practice
-        reading and building Greek sentences word by word.
-      </div>
-    </div>
+
+<div class="app">
+  <a class="back-link" href="index.html">‹ All games</a>
+
+  <div class="streak" id="streak">🔥 Streak: 0</div>
+
+  <!-- Splash Screen -->
+  <div class="splash" id="splash">
+    <div class="splash-title">Who Did What?</div>
+    <div class="splash-subtitle">Tap the Greek words to figure out the sentence!</div>
+    <button class="splash-btn" onclick="startGame()">Let's Go!</button>
   </div>
+
+  <!-- Game Screen -->
+  <div class="game hidden" id="game">
+    <div class="greek-sentence" id="greek-sentence"></div>
+    <div class="prompt" id="prompt"></div>
+    <div class="prompt-detail hidden" id="prompt-detail"></div>
+    <div id="interaction-area"></div>
+    <div class="feedback" id="feedback"></div>
+    <div id="reveal-area"></div>
+  </div>
+</div>
+
+<!-- Celebration overlay -->
+<div class="celebration-overlay" id="celebration">
+  <div class="celebration-card">
+    <div class="celebration-icon" id="celeb-icon">⭐</div>
+    <div class="celebration-title" id="celeb-title"></div>
+    <div class="celebration-text" id="celeb-text"></div>
+    <button class="celebration-btn" onclick="closeCelebration()">Keep Going!</button>
+  </div>
+</div>
+
+<!-- Stars container for mini celebrations -->
+<div class="stars-container" id="stars-container"></div>
+
+<script>
+const SENTENCES = [
+  {
+    id: 1,
+    greek: "ὁ ἀδελφὸς παιδεύει τὸν ἄνθρωπον.",
+    english: "The brother educates the man.",
+    wordGroups: [
+      { words: "ὁ ἀδελφὸς", role: "subject", english: "the brother" },
+      { words: "παιδεύει", role: "verb", english: "educates" },
+      { words: "τὸν ἄνθρωπον", role: "object", english: "the man" }
+    ],
+    distractorNouns: ["the gift", "the road"]
+  },
+  {
+    id: 2,
+    greek: "ὁ ἄνθρωπος πέμπει τὰ δῶρα εἰς τὴν νῆσον.",
+    english: "The man sends the gifts to the island.",
+    wordGroups: [
+      { words: "ὁ ἄνθρωπος", role: "subject", english: "the man" },
+      { words: "πέμπει", role: "verb", english: "sends" },
+      { words: "τὰ δῶρα", role: "object", english: "the gifts" },
+      { words: "εἰς τὴν νῆσον", role: "prep", english: "to the island" }
+    ],
+    distractorNouns: ["the brother", "the book"]
+  },
+  {
+    id: 3,
+    greek: "ἡ θεὸς ἔχει τὰ βιβλία.",
+    english: "The goddess has the books.",
+    wordGroups: [
+      { words: "ἡ θεὸς", role: "subject", english: "the goddess" },
+      { words: "ἔχει", role: "verb", english: "has" },
+      { words: "τὰ βιβλία", role: "object", english: "the books" }
+    ],
+    distractorNouns: ["the soul", "the battle"]
+  },
+  {
+    id: 4,
+    greek: "ὁ ἄνθρωπος γράφει τοὺς λόγους.",
+    english: "The man writes the words.",
+    wordGroups: [
+      { words: "ὁ ἄνθρωπος", role: "subject", english: "the man" },
+      { words: "γράφει", role: "verb", english: "writes" },
+      { words: "τοὺς λόγους", role: "object", english: "the words" }
+    ],
+    distractorNouns: ["the house", "the goddess"]
+  },
+  {
+    id: 5,
+    greek: "ὁ ἀδελφὸς πέμπει τὰ βιβλία εἰς τὴν οἰκίαν.",
+    english: "The brother sends the books to the house.",
+    wordGroups: [
+      { words: "ὁ ἀδελφὸς", role: "subject", english: "the brother" },
+      { words: "πέμπει", role: "verb", english: "sends" },
+      { words: "τὰ βιβλία", role: "object", english: "the books" },
+      { words: "εἰς τὴν οἰκίαν", role: "prep", english: "to the house" }
+    ],
+    distractorNouns: ["the man", "the soul"]
+  },
+  {
+    id: 6,
+    greek: "ἡ θεὸς παιδεύει τὸν ἀδελφόν.",
+    english: "The goddess educates the brother.",
+    wordGroups: [
+      { words: "ἡ θεὸς", role: "subject", english: "the goddess" },
+      { words: "παιδεύει", role: "verb", english: "educates" },
+      { words: "τὸν ἀδελφόν", role: "object", english: "the brother" }
+    ],
+    distractorNouns: ["the island", "the work"]
+  },
+  {
+    id: 7,
+    greek: "ὁ Ὅμηρος γράφει τοὺς λόγους ἐν τῇ ἀγορᾷ.",
+    english: "Homer writes the words in the market place.",
+    wordGroups: [
+      { words: "ὁ Ὅμηρος", role: "subject", english: "Homer" },
+      { words: "γράφει", role: "verb", english: "writes" },
+      { words: "τοὺς λόγους", role: "object", english: "the words" },
+      { words: "ἐν τῇ ἀγορᾷ", role: "prep", english: "in the market place" }
+    ],
+    distractorNouns: ["the gift", "the goddess"]
+  },
+  {
+    id: 8,
+    greek: "ὁ ἄνθρωπος ἔχει τὴν τέχνην.",
+    english: "The man has the skill.",
+    wordGroups: [
+      { words: "ὁ ἄνθρωπος", role: "subject", english: "the man" },
+      { words: "ἔχει", role: "verb", english: "has" },
+      { words: "τὴν τέχνην", role: "object", english: "the skill" }
+    ],
+    distractorNouns: ["the country", "the brother"]
+  },
+  {
+    id: 9,
+    greek: "ὁ ἀδελφὸς πέμπει τὰ δῶρα ἐκ τῆς χώρᾱς.",
+    english: "The brother sends the gifts from the country.",
+    wordGroups: [
+      { words: "ὁ ἀδελφὸς", role: "subject", english: "the brother" },
+      { words: "πέμπει", role: "verb", english: "sends" },
+      { words: "τὰ δῶρα", role: "object", english: "the gifts" },
+      { words: "ἐκ τῆς χώρᾱς", role: "prep", english: "from the country" }
+    ],
+    distractorNouns: ["the man", "the book"]
+  },
+  {
+    id: 10,
+    greek: "ἡ θεὸς ἔχει τὰ ἔργα καὶ τὴν τέχνην.",
+    english: "The goddess has the works and the skill.",
+    wordGroups: [
+      { words: "ἡ θεὸς", role: "subject", english: "the goddess" },
+      { words: "ἔχει", role: "verb", english: "has" },
+      { words: "τὰ ἔργα", role: "object", english: "the works" },
+      { words: "καὶ", role: "conj", english: "and" },
+      { words: "τὴν τέχνην", role: "object2", english: "the skill" }
+    ],
+    distractorNouns: ["the road", "the island"]
+  }
+];
+
+let remaining = [];
+let current = null;
+let step = "";
+let streak = 0;
+let madeErrorThisRound = false;
+let locked = false;
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function pickSentence() {
+  if (remaining.length === 0) {
+    remaining = shuffle([...Array(SENTENCES.length).keys()]);
+  }
+  return SENTENCES[remaining.pop()];
+}
+
+function startGame() {
+  document.getElementById("splash").classList.add("hidden");
+  document.getElementById("game").classList.remove("hidden");
+  document.getElementById("streak").style.display = "block";
+  nextSentence();
+}
+
+function nextSentence() {
+  current = pickSentence();
+  madeErrorThisRound = false;
+  clearFeedback();
+  document.getElementById("reveal-area").innerHTML = "";
+  showStep("A");
+}
+
+function clearFeedback() {
+  const fb = document.getElementById("feedback");
+  fb.textContent = "";
+  fb.className = "feedback";
+}
+
+function setFeedback(text, type) {
+  const fb = document.getElementById("feedback");
+  fb.textContent = text;
+  fb.className = "feedback " + type;
+}
+
+function renderGreekSentence(highlightSubject, highlightObject) {
+  const el = document.getElementById("greek-sentence");
+  el.innerHTML = current.wordGroups.map(g => {
+    let cls = "word-inline";
+    if (highlightSubject && g.role === "subject") cls += " subject-done";
+    if (highlightObject && (g.role === "object" || g.role === "object2")) cls += " object-done";
+    return `<span class="${cls}">${g.words}</span>`;
+  }).join(" ") + (current.greek.endsWith(".") ? "" : ".");
+}
+
+function showStep(s) {
+  step = s;
+  clearFeedback();
+  const interaction = document.getElementById("interaction-area");
+  const detail = document.getElementById("prompt-detail");
+  detail.classList.add("hidden");
+  interaction.innerHTML = "";
+
+  if (s === "A") {
+    renderGreekSentence(false, false);
+    document.getElementById("prompt").textContent = "Who is doing the action?";
+    detail.textContent = "Tap the word!";
+    detail.classList.remove("hidden");
+    renderWordButtons("subject");
+  } else if (s === "B") {
+    renderGreekSentence(true, false);
+    document.getElementById("prompt").textContent = "What is the subject in English?";
+    detail.innerHTML = "The word you picked is the <strong>SUBJECT</strong> — the one doing the action!";
+    detail.classList.remove("hidden");
+    renderSubjectChoices();
+  } else if (s === "C") {
+    renderGreekSentence(true, false);
+    const isSentence10 = current.id === 10;
+    document.getElementById("prompt").textContent = "Who or what is it happening to?";
+    detail.textContent = "Tap the word!";
+    detail.classList.remove("hidden");
+    renderWordButtons("object", true, isSentence10);
+  } else if (s === "D") {
+    renderGreekSentence(true, true);
+    const isSentence10 = current.id === 10;
+    if (isSentence10) {
+      document.getElementById("prompt").textContent = "The direct objects in English:";
+      detail.innerHTML = "Both are <strong>DIRECT OBJECTS</strong> — the action is happening to them!";
+      detail.classList.remove("hidden");
+      interaction.innerHTML = `<div class="choices"><button class="choice-btn correct" disabled style="font-size:20px;">the works and the skill</button></div>`;
+      setFeedback("🎉 Great job!", "success");
+      setTimeout(() => showStep("E"), 1500);
+      return;
+    }
+    document.getElementById("prompt").textContent = "What is the direct object in English?";
+    detail.innerHTML = "That word is the <strong>DIRECT OBJECT</strong> — the action is happening to it!";
+    detail.classList.remove("hidden");
+    renderObjectChoices();
+  } else if (s === "E") {
+    renderGreekSentence(true, true);
+    document.getElementById("prompt").textContent = "The full sentence!";
+    detail.classList.add("hidden");
+    interaction.innerHTML = "";
+    renderTranslation();
+  }
+}
+
+function renderWordButtons(targetRole, grayOutSubject, acceptBothObjects) {
+  const area = document.getElementById("interaction-area");
+  const wrap = document.createElement("div");
+  wrap.className = "word-buttons";
+
+  current.wordGroups.forEach((g, i) => {
+    const btn = document.createElement("button");
+    btn.className = "word-btn";
+    btn.textContent = g.words;
+    btn.dataset.index = i;
+
+    if (grayOutSubject && g.role === "subject") {
+      btn.classList.add("subject-highlight");
+      btn.disabled = true;
+    } else if (g.role === "verb" || g.role === "prep" || g.role === "conj") {
+      btn.addEventListener("click", () => handleWrongWordTap(btn));
+    } else if (targetRole === "subject" && g.role === "subject") {
+      btn.addEventListener("click", () => handleCorrectWordTap(btn));
+    } else if (targetRole === "object") {
+      if (g.role === "object" || (acceptBothObjects && g.role === "object2")) {
+        btn.addEventListener("click", () => {
+          if (acceptBothObjects) {
+            handleCorrectWordTapSentence10(btn, wrap);
+          } else {
+            handleCorrectWordTap(btn);
+          }
+        });
+      } else if (g.role !== "subject") {
+        btn.addEventListener("click", () => handleWrongWordTap(btn));
+      }
+    } else {
+      btn.addEventListener("click", () => handleWrongWordTap(btn));
+    }
+
+    wrap.appendChild(btn);
+  });
+  area.appendChild(wrap);
+}
+
+function handleCorrectWordTap(btn) {
+  if (locked) return;
+  locked = true;
+  btn.classList.add("correct");
+  btn.disabled = true;
+  setFeedback("🎉 Yes!", "success");
+  spawnStars(btn);
+  disableAllWordBtns();
+  setTimeout(() => {
+    locked = false;
+    if (step === "A") showStep("B");
+    else if (step === "C") showStep("D");
+  }, 1000);
+}
+
+function handleCorrectWordTapSentence10(btn, wrap) {
+  if (locked) return;
+  locked = true;
+  btn.classList.add("correct");
+  btn.disabled = true;
+
+  const allBtns = wrap.querySelectorAll(".word-btn");
+  allBtns.forEach(b => {
+    const idx = parseInt(b.dataset.index);
+    const g = current.wordGroups[idx];
+    if (g.role === "object" || g.role === "object2") {
+      b.classList.add("object-highlight");
+      b.disabled = true;
+    }
+    if (g.role === "conj") {
+      b.classList.add("object-highlight");
+      b.disabled = true;
+    }
+    b.disabled = true;
+  });
+
+  setFeedback("🎉 And the other one too! They're both direct objects.", "success");
+  spawnStars(btn);
+  setTimeout(() => {
+    locked = false;
+    showStep("D");
+  }, 1500);
+}
+
+function handleWrongWordTap(btn) {
+  if (locked) return;
+  locked = true;
+  madeErrorThisRound = true;
+  btn.classList.add("wrong");
+  setFeedback("Not quite — try again!", "error");
+  setTimeout(() => {
+    btn.classList.remove("wrong");
+    locked = false;
+  }, 600);
+}
+
+function disableAllWordBtns() {
+  document.querySelectorAll(".word-btn").forEach(b => b.disabled = true);
+}
+
+function buildChoices(correctAnswer, distractors) {
+  const options = [correctAnswer, ...distractors.slice(0, 2)];
+  return shuffle(options);
+}
+
+function renderSubjectChoices() {
+  const area = document.getElementById("interaction-area");
+  const subj = current.wordGroups.find(g => g.role === "subject");
+  const choices = buildChoices(subj.english, current.distractorNouns);
+  const wrap = document.createElement("div");
+  wrap.className = "choices";
+
+  choices.forEach(c => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.textContent = c;
+    btn.addEventListener("click", () => handleChoice(btn, c === subj.english));
+    wrap.appendChild(btn);
+  });
+  area.appendChild(wrap);
+}
+
+function renderObjectChoices() {
+  const area = document.getElementById("interaction-area");
+  const obj = current.wordGroups.find(g => g.role === "object");
+  const choices = buildChoices(obj.english, current.distractorNouns);
+  const wrap = document.createElement("div");
+  wrap.className = "choices";
+
+  choices.forEach(c => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.textContent = c;
+    btn.addEventListener("click", () => handleChoice(btn, c === obj.english));
+    wrap.appendChild(btn);
+  });
+  area.appendChild(wrap);
+}
+
+function handleChoice(btn, isCorrect) {
+  if (locked) return;
+  if (isCorrect) {
+    locked = true;
+    btn.classList.add("correct");
+    disableAllChoiceBtns();
+    setFeedback("🎉 Right!", "success");
+    spawnStars(btn);
+    setTimeout(() => {
+      locked = false;
+      if (step === "B") showStep("C");
+      else if (step === "D") showStep("E");
+    }, 1000);
+  } else {
+    locked = true;
+    madeErrorThisRound = true;
+    btn.classList.add("wrong");
+    setFeedback("Not quite — try again!", "error");
+    setTimeout(() => {
+      btn.classList.remove("wrong");
+      locked = false;
+    }, 600);
+  }
+}
+
+function disableAllChoiceBtns() {
+  document.querySelectorAll(".choice-btn").forEach(b => b.disabled = true);
+}
+
+function renderTranslation() {
+  const reveal = document.getElementById("reveal-area");
+  const subj = current.wordGroups.find(g => g.role === "subject");
+  const obj = current.wordGroups.find(g => g.role === "object");
+  const verb = current.wordGroups.find(g => g.role === "verb");
+  const obj2 = current.wordGroups.find(g => g.role === "object2");
+  const prep = current.wordGroups.find(g => g.role === "prep");
+
+  let englishHTML = current.english;
+  if (subj) {
+    const subjCap = subj.english.charAt(0).toUpperCase() + subj.english.slice(1);
+    englishHTML = englishHTML.replace(subjCap, `<span class="subj">${subjCap}</span>`);
+    englishHTML = englishHTML.replace(new RegExp(`(?<![">])${escapeRegex(subj.english)}`, "i"),
+      (match) => `<span class="subj">${match}</span>`);
+  }
+  if (obj) {
+    englishHTML = englishHTML.replace(new RegExp(`(?<![">])${escapeRegex(obj.english)}`, "i"),
+      (match) => `<span class="obj">${match}</span>`);
+  }
+  if (obj2) {
+    englishHTML = englishHTML.replace(new RegExp(`(?<![">])${escapeRegex(obj2.english)}`, "i"),
+      (match) => `<span class="obj">${match}</span>`);
+  }
+
+  reveal.innerHTML = `
+    <div class="translation-box">
+      <div class="translation-label">English Translation</div>
+      <div class="translation-text">${englishHTML}</div>
+    </div>
+    <button class="next-btn" onclick="finishRound()">Next Sentence →</button>
+  `;
+}
+
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function finishRound() {
+  if (madeErrorThisRound) {
+    streak = 0;
+  } else {
+    streak++;
+  }
+  updateStreak();
+  if (!madeErrorThisRound && (streak === 5 || streak === 10 || streak === 15)) {
+    showCelebration(streak);
+  } else {
+    nextSentence();
+  }
+}
+
+function updateStreak() {
+  document.getElementById("streak").textContent = "🔥 Streak: " + streak;
+}
+
+function showCelebration(n) {
+  const overlay = document.getElementById("celebration");
+  document.getElementById("celeb-icon").textContent = n >= 15 ? "🏆" : n >= 10 ? "🌟" : "⭐";
+  document.getElementById("celeb-title").textContent = n + " in a row!";
+  const msgs = {
+    5: "You're amazing!",
+    10: "Incredible work!",
+    15: "You're a Greek superstar!"
+  };
+  document.getElementById("celeb-text").textContent = msgs[n] || "Keep it up!";
+  overlay.classList.add("show");
+}
+
+function closeCelebration() {
+  document.getElementById("celebration").classList.remove("show");
+  nextSentence();
+}
+
+function spawnStars(anchor) {
+  const container = document.getElementById("stars-container");
+  const rect = anchor.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top;
+  const emojis = ["⭐", "✨", "🌟", "💫"];
+
+  for (let i = 0; i < 6; i++) {
+    const star = document.createElement("div");
+    star.className = "star";
+    star.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    star.style.left = (cx + (Math.random() - 0.5) * 100) + "px";
+    star.style.top = (cy - 10) + "px";
+    star.style.animationDuration = (0.6 + Math.random() * 0.6) + "s";
+    container.appendChild(star);
+    setTimeout(() => star.remove(), 1200);
+  }
+}
+</script>
+
 </body>
 </html>
