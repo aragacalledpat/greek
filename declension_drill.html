@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Declension Drill — Greek Practice</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, "Times New Roman", serif;
+      background: #FAF7F2;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 1rem;
+      color: #2C2420;
+    }
+
+    .app {
+      max-width: 560px;
+      width: 100%;
+      padding-top: 0.5rem;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      color: #bbb;
+      text-decoration: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .back-link:hover { color: #888; }
+
+    h1 {
+      font-size: 28px;
+      font-weight: normal;
+      text-align: center;
+      margin-bottom: 0.25rem;
+      color: #2C2420;
+    }
+
+    .tagline {
+      text-align: center;
+      font-size: 14px;
+      color: #998A7A;
+      margin-bottom: 1.5rem;
+    }
+
+    /* --- Loading --- */
+    .loading {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #998A7A;
+      font-size: 16px;
+    }
+    .loading .spinner {
+      display: inline-block;
+      width: 24px; height: 24px;
+      border: 3px solid #E8E0D6;
+      border-top-color: #8B7355;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 0.75rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* --- Filters --- */
+    .filters {
+      background: #F3EDE5;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1rem;
+      align-items: center;
+    }
+    .filters-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #998A7A;
+      width: 100%;
+      margin-bottom: 0.2rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .filters label {
+      font-size: 13px;
+      color: #5C4E3E;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .filters input[type="checkbox"] {
+      accent-color: #8B7355;
+    }
+
+    /* --- Mode toggle --- */
+    .mode-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .mode-btn {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1.5px solid #D6CBBC;
+      border-radius: 8px;
+      background: #fff;
+      color: #5C4E3E;
+      font-size: 13px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .mode-btn.active {
+      background: #5C4E3E;
+      color: #FAF7F2;
+      border-color: #5C4E3E;
+    }
+    .mode-btn:hover:not(.active) {
+      border-color: #8B7355;
+      background: #F3EDE5;
+    }
+
+    /* --- Stats bar --- */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-bottom: 1.25rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      color: #998A7A;
+    }
+    .stats span { display: flex; align-items: center; gap: 4px; }
+    .stat-val { font-weight: 700; color: #5C4E3E; }
+    .stat-correct .stat-val { color: #4A7C59; }
+    .stat-wrong .stat-val { color: #A05252; }
+
+    /* --- Question card --- */
+    .card {
+      background: #fff;
+      border: 1px solid #E8E0D6;
+      border-radius: 14px;
+      padding: 2rem 1.5rem;
+      margin-bottom: 1.25rem;
+      text-align: center;
+    }
+    .lexical {
+      font-size: 26px;
+      margin-bottom: 0.25rem;
+      color: #2C2420;
+    }
+    .meaning {
+      font-size: 14px;
+      color: #998A7A;
+      margin-bottom: 1.25rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .prompt-text {
+      font-size: 16px;
+      color: #5C4E3E;
+      margin-bottom: 1.25rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .prompt-text strong {
+      color: #8B7355;
+    }
+
+    /* --- Input area --- */
+    .input-row {
+      display: flex;
+      gap: 0.5rem;
+      max-width: 360px;
+      margin: 0 auto 0.75rem;
+    }
+    #answer-input {
+      flex: 1;
+      font-size: 22px;
+      font-family: Georgia, "Times New Roman", serif;
+      padding: 0.6rem 0.75rem;
+      border: 1.5px solid #D6CBBC;
+      border-radius: 8px;
+      background: #FDFBF8;
+      color: #2C2420;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    #answer-input:focus {
+      border-color: #8B7355;
+    }
+    #answer-input::placeholder {
+      color: #C8BBAA;
+      font-size: 16px;
+    }
+
+    .btn {
+      padding: 0.6rem 1.25rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-check {
+      background: #5C4E3E;
+      color: #FAF7F2;
+    }
+    .btn-check:hover { background: #4A3E30; }
+    .btn-skip {
+      background: transparent;
+      color: #998A7A;
+      border: 1.5px solid #D6CBBC;
+    }
+    .btn-skip:hover { background: #F3EDE5; }
+    .btn-next {
+      background: #8B7355;
+      color: #FAF7F2;
+    }
+    .btn-next:hover { background: #74603F; }
+
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-top: 0.75rem;
+    }
+
+    /* --- Feedback --- */
+    .feedback {
+      font-size: 16px;
+      min-height: 1.5em;
+      margin-top: 0.5rem;
+    }
+    .feedback.correct { color: #4A7C59; }
+    .feedback.incorrect {
+      color: #A05252;
+    }
+    .correct-answer {
+      font-size: 20px;
+      color: #5C4E3E;
+      margin-top: 0.3rem;
+    }
+
+    /* --- Reference tables --- */
+    .ref-section {
+      margin-top: 2rem;
+      margin-bottom: 2rem;
+    }
+    .ref-toggle {
+      width: 100%;
+      background: #F3EDE5;
+      border: 1px solid #E8E0D6;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      font-size: 14px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #5C4E3E;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ref-toggle:hover { background: #EDE5DA; }
+    .ref-toggle .arrow { transition: transform 0.2s; }
+    .ref-toggle.open .arrow { transform: rotate(90deg); }
+
+    .ref-tables {
+      display: none;
+      padding: 1rem 0;
+    }
+    .ref-tables.open { display: block; }
+
+    .ref-tables h3 {
+      font-size: 15px;
+      font-weight: normal;
+      color: #8B7355;
+      margin: 1.25rem 0 0.5rem;
+    }
+    .ref-tables h3:first-child { margin-top: 0; }
+
+    .ref-tables table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-bottom: 0.5rem;
+    }
+    .ref-tables th {
+      background: #F3EDE5;
+      padding: 0.35rem 0.5rem;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #998A7A;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .ref-tables td {
+      padding: 0.35rem 0.5rem;
+      border-bottom: 1px solid #F0E8DE;
+      color: #2C2420;
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 480px) {
+      .lexical { font-size: 22px; }
+      #answer-input { font-size: 20px; }
+      .card { padding: 1.5rem 1rem; }
+      .filters { gap: 0.3rem 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <a class="back-link" href="index.html">&#8249; All games</a>
+    <h1>Declension Drill</h1>
+    <p class="tagline">1st &amp; 2nd declension noun forms</p>
+
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <div>Loading vocabulary...</div>
+    </div>
+
+    <div id="game" style="display:none;">
+      <!-- Filters -->
+      <div class="filters">
+        <div class="filters-title">Declension types</div>
+        <label><input type="checkbox" id="f-1eta" checked> 1st-&#951;</label>
+        <label><input type="checkbox" id="f-1alpha" checked> 1st-&#945;</label>
+        <label><input type="checkbox" id="f-2m" checked> 2nd masc</label>
+        <label><input type="checkbox" id="f-2n" checked> 2nd neut</label>
+        <label><input type="checkbox" id="f-2f" checked> 2nd fem</label>
+      </div>
+
+      <!-- Mode -->
+      <div class="mode-row">
+        <button class="mode-btn active" data-mode="full">Full form (article + noun)</button>
+        <button class="mode-btn" data-mode="ending">Ending only</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats">
+        <span class="stat-correct">&#10003; <span class="stat-val" id="stat-correct">0</span></span>
+        <span class="stat-wrong">&#10007; <span class="stat-val" id="stat-wrong">0</span></span>
+        <span>Acc <span class="stat-val" id="stat-acc">0%</span></span>
+        <span>Streak <span class="stat-val" id="stat-streak">0</span></span>
+      </div>
+
+      <!-- Question card -->
+      <div class="card">
+        <div class="lexical" id="lexical"></div>
+        <div class="meaning" id="meaning"></div>
+        <div class="prompt-text" id="prompt"></div>
+        <div class="input-row">
+          <input type="text" id="answer-input" placeholder="type here..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          <button class="btn btn-check" id="btn-check">Check</button>
+        </div>
+        <div class="btn-row" id="btn-row-pre">
+          <button class="btn btn-skip" id="btn-skip">Skip</button>
+        </div>
+        <div class="feedback" id="feedback"></div>
+        <div class="correct-answer" id="correct-answer"></div>
+        <div class="btn-row" id="btn-row-post" style="display:none;">
+          <button class="btn btn-next" id="btn-next">Next</button>
+        </div>
+      </div>
+
+      <!-- Reference tables -->
+      <div class="ref-section">
+        <button class="ref-toggle" id="ref-toggle">
+          <span>Reference tables</span>
+          <span class="arrow">&#8250;</span>
+        </button>
+        <div class="ref-tables" id="ref-tables">
+
+          <h3>Definite Article</h3>
+          <table>
+            <tr><th></th><th>Masc sg</th><th>Masc pl</th><th>Fem sg</th><th>Fem pl</th><th>Neut sg</th><th>Neut pl</th></tr>
+            <tr><td>Nom</td><td>&#8001;</td><td>&#959;&#7985;</td><td>&#7969;</td><td>&#945;&#7985;</td><td>&#964;&#972;</td><td>&#964;&#940;</td></tr>
+            <tr><td>Gen</td><td>&#964;&#959;&#8166;</td><td>&#964;&#8182;&#957;</td><td>&#964;&#8134;&#962;</td><td>&#964;&#8182;&#957;</td><td>&#964;&#959;&#8166;</td><td>&#964;&#8182;&#957;</td></tr>
+            <tr><td>Dat</td><td>&#964;&#8183;</td><td>&#964;&#959;&#8150;&#962;</td><td>&#964;&#8135;</td><td>&#964;&#945;&#8150;&#962;</td><td>&#964;&#8183;</td><td>&#964;&#959;&#8150;&#962;</td></tr>
+            <tr><td>Acc</td><td>&#964;&#972;&#957;</td><td>&#964;&#959;&#973;&#962;</td><td>&#964;&#942;&#957;</td><td>&#964;&#940;&#962;</td><td>&#964;&#972;</td><td>&#964;&#940;</td></tr>
+          </table>
+
+          <h3>2nd Declension Masculine (&#8001; &#955;&#972;&#947;&#959;&#962;)</h3>
+          <table>
+            <tr><th></th><th>Singular</th><th>Plural</th></tr>
+            <tr><td>Nom</td><td>&#955;&#972;&#947;&#959;&#962;</td><td>&#955;&#972;&#947;&#959;&#953;</td></tr>
+            <tr><td>Gen</td><td>&#955;&#972;&#947;&#959;&#965;</td><td>&#955;&#972;&#947;&#969;&#957;</td></tr>
+            <tr><td>Dat</td><td>&#955;&#972;&#947;&#8179;</td><td>&#955;&#972;&#947;&#959;&#953;&#962;</td></tr>
+            <tr><td>Acc</td><td>&#955;&#972;&#947;&#959;&#957;</td><td>&#955;&#972;&#947;&#959;&#965;&#962;</td></tr>
+          </table>
+
+          <h3>2nd Declension Neuter (&#964;&#8056; &#7956;&#961;&#947;&#959;&#957;)</h3>
+          <table>
+            <tr><th></th><th>Singular</th><th>Plural</th></tr>
+            <tr><td>Nom</td><td>&#7956;&#961;&#947;&#959;&#957;</td><td>&#7956;&#961;&#947;&#945;</td></tr>
+            <tr><td>Gen</td><td>&#7956;&#961;&#947;&#959;&#965;</td><td>&#7956;&#961;&#947;&#969;&#957;</td></tr>
+            <tr><td>Dat</td><td>&#7956;&#961;&#947;&#8179;</td><td>&#7956;&#961;&#947;&#959;&#953;&#962;</td></tr>
+            <tr><td>Acc</td><td>&#7956;&#961;&#947;&#959;&#957;</td><td>&#7956;&#961;&#947;&#945;</td></tr>
+          </table>
+
+          <h3>1st Declension &#951;-stem (&#7969; &#7936;&#961;&#967;&#942;)</h3>
+          <table>
+            <tr><th></th><th>Singular</th><th>Plural</th></tr>
+            <tr><td>Nom</td><td>&#7936;&#961;&#967;&#942;</td><td>&#7936;&#961;&#967;&#945;&#943;</td></tr>
+            <tr><td>Gen</td><td>&#7936;&#961;&#967;&#8134;&#962;</td><td>&#7936;&#961;&#967;&#8182;&#957;</td></tr>
+            <tr><td>Dat</td><td>&#7936;&#961;&#967;&#8135;</td><td>&#7936;&#961;&#967;&#945;&#8150;&#962;</td></tr>
+            <tr><td>Acc</td><td>&#7936;&#961;&#967;&#942;&#957;</td><td>&#7936;&#961;&#967;&#940;&#962;</td></tr>
+          </table>
+
+          <h3>1st Declension &#945;-stem (&#7969; &#967;&#974;&#961;&#945;)</h3>
+          <table>
+            <tr><th></th><th>Singular</th><th>Plural</th></tr>
+            <tr><td>Nom</td><td>&#967;&#974;&#961;&#945;</td><td>&#967;&#8182;&#961;&#945;&#953;</td></tr>
+            <tr><td>Gen</td><td>&#967;&#974;&#961;&#945;&#962;</td><td>&#967;&#969;&#961;&#8182;&#957;</td></tr>
+            <tr><td>Dat</td><td>&#967;&#974;&#961;&#8115;</td><td>&#967;&#974;&#961;&#945;&#953;&#962;</td></tr>
+            <tr><td>Acc</td><td>&#967;&#974;&#961;&#945;&#957;</td><td>&#967;&#974;&#961;&#940;&#962;</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ─── Data ───────────────────────────────────────────────────────────
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSbCVK8ZbE0a3YPeVZB0i5E6Xgh0Nm_mjxUEdRqE3WFgcuFOpJYBj50bIj181wcgFvfGfL3tLsElZcI/pub?output=csv';
+
+const ARTICLE = {
+  m: {
+    nom: { sg: 'ὁ', pl: 'οἱ' },
+    gen: { sg: 'τοῦ', pl: 'τῶν' },
+    dat: { sg: 'τῷ', pl: 'τοῖς' },
+    acc: { sg: 'τόν', pl: 'τούς' }
+  },
+  f: {
+    nom: { sg: 'ἡ', pl: 'αἱ' },
+    gen: { sg: 'τῆς', pl: 'τῶν' },
+    dat: { sg: 'τῇ', pl: 'ταῖς' },
+    acc: { sg: 'τήν', pl: 'τάς' }
+  },
+  n: {
+    nom: { sg: 'τό', pl: 'τά' },
+    gen: { sg: 'τοῦ', pl: 'τῶν' },
+    dat: { sg: 'τῷ', pl: 'τοῖς' },
+    acc: { sg: 'τό', pl: 'τά' }
+  }
+};
+
+const ENDINGS = {
+  '2nd': {
+    nom: { sg: 'ος', pl: 'οι' },
+    gen: { sg: 'ου', pl: 'ων' },
+    dat: { sg: 'ῳ', pl: 'οις' },
+    acc: { sg: 'ον', pl: 'ους' }
+  },
+  '2nd-n': {
+    nom: { sg: 'ον', pl: 'α' },
+    gen: { sg: 'ου', pl: 'ων' },
+    dat: { sg: 'ῳ', pl: 'οις' },
+    acc: { sg: 'ον', pl: 'α' }
+  },
+  '1st-η': {
+    nom: { sg: 'η', pl: 'αι' },
+    gen: { sg: 'ης', pl: 'ων' },
+    dat: { sg: 'ῃ', pl: 'αις' },
+    acc: { sg: 'ην', pl: 'ας' }
+  },
+  '1st-α': {
+    nom: { sg: 'α', pl: 'αι' },
+    gen: { sg: 'ας', pl: 'ων' },
+    dat: { sg: 'ᾳ', pl: 'αις' },
+    acc: { sg: 'αν', pl: 'ας' }
+  }
+};
+
+const CASE_NAMES = { nom: 'nominative', gen: 'genitive', dat: 'dative', acc: 'accusative' };
+const NUMBER_NAMES = { sg: 'singular', pl: 'plural' };
+
+// ─── State ──────────────────────────────────────────────────────────
+let allNouns = [];
+let mode = 'full'; // 'full' or 'ending'
+let stats = { correct: 0, wrong: 0, streak: 0 };
+let current = null; // { noun, caseKey, number, form }
+let answered = false;
+
+// ─── CSV Parsing ────────────────────────────────────────────────────
+function parseCSV(csv) {
+  const lines = csv.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim());
+  return lines.slice(1).map(line => {
+    const values = line.split(',');
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = (values[i] || '').trim());
+    return obj;
+  });
+}
+
+// ─── Form building ──────────────────────────────────────────────────
+function getEndingsForType(type) {
+  if (type === '2nd-f') return ENDINGS['2nd'];
+  return ENDINGS[type];
+}
+
+function buildForm(noun, caseKey, number) {
+  const endings = getEndingsForType(noun.type);
+  if (!endings) return null;
+  const ending = endings[caseKey][number];
+  const art = ARTICLE[noun.gender][caseKey][number];
+  const nounForm = noun.stem + ending;
+  return {
+    full: art + ' ' + nounForm,
+    ending: ending,
+    article: art,
+    nounForm: nounForm
+  };
+}
+
+// ─── Normalization ──────────────────────────────────────────────────
+function normalizeGreek(str) {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function checkAnswer(userInput, correctForm) {
+  const input = userInput.trim();
+  if (input === correctForm) return true;
+  if (normalizeGreek(input) === normalizeGreek(correctForm)) return true;
+  return false;
+}
+
+// ─── Filtering ──────────────────────────────────────────────────────
+function getFilteredNouns() {
+  const filters = {
+    '1st-η': document.getElementById('f-1eta').checked,
+    '1st-α': document.getElementById('f-1alpha').checked,
+    '2nd': document.getElementById('f-2m').checked,
+    '2nd-n': document.getElementById('f-2n').checked,
+    '2nd-f': document.getElementById('f-2f').checked
+  };
+  return allNouns.filter(n => filters[n.type]);
+}
+
+// ─── Question generation ────────────────────────────────────────────
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function nextQuestion() {
+  const nouns = getFilteredNouns();
+  if (nouns.length === 0) {
+    document.getElementById('lexical').textContent = '—';
+    document.getElementById('meaning').textContent = 'No nouns match your filters';
+    document.getElementById('prompt').textContent = '';
+    document.getElementById('answer-input').disabled = true;
+    return;
+  }
+
+  answered = false;
+  const noun = pickRandom(nouns);
+  const caseKey = pickRandom(['nom', 'gen', 'dat', 'acc']);
+  const number = pickRandom(['sg', 'pl']);
+  const form = buildForm(noun, caseKey, number);
+
+  current = { noun, caseKey, number, form };
+
+  document.getElementById('lexical').textContent = noun.lexical;
+  document.getElementById('meaning').textContent = noun.meaning;
+  document.getElementById('prompt').innerHTML =
+    'Give the <strong>' + CASE_NAMES[caseKey] + ' ' + NUMBER_NAMES[number] + '</strong>';
+
+  const input = document.getElementById('answer-input');
+  input.disabled = false;
+  input.value = '';
+  input.focus();
+
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('correct-answer').textContent = '';
+  document.getElementById('btn-row-pre').style.display = 'flex';
+  document.getElementById('btn-row-post').style.display = 'none';
+  document.getElementById('btn-check').style.display = '';
+}
+
+// ─── Answer checking ────────────────────────────────────────────────
+function submitAnswer() {
+  if (!current || answered) return;
+  const input = document.getElementById('answer-input').value.trim();
+  if (!input) return;
+
+  answered = true;
+  const expected = mode === 'full' ? current.form.full : current.form.ending;
+  const isCorrect = checkAnswer(input, expected);
+
+  const fb = document.getElementById('feedback');
+  const ca = document.getElementById('correct-answer');
+
+  if (isCorrect) {
+    stats.correct++;
+    stats.streak++;
+    fb.textContent = 'Correct!';
+    fb.className = 'feedback correct';
+    ca.textContent = current.form.full;
+  } else {
+    stats.wrong++;
+    stats.streak = 0;
+    fb.textContent = 'Incorrect';
+    fb.className = 'feedback incorrect';
+    ca.textContent = current.form.full + '  (' + current.form.ending + ')';
+  }
+
+  updateStats();
+  document.getElementById('answer-input').disabled = true;
+  document.getElementById('btn-row-pre').style.display = 'none';
+  document.getElementById('btn-row-post').style.display = 'flex';
+}
+
+function skipQuestion() {
+  if (!current || answered) return;
+  answered = true;
+  stats.wrong++;
+  stats.streak = 0;
+
+  const fb = document.getElementById('feedback');
+  fb.textContent = 'Skipped';
+  fb.className = 'feedback incorrect';
+  document.getElementById('correct-answer').textContent = current.form.full + '  (' + current.form.ending + ')';
+
+  updateStats();
+  document.getElementById('answer-input').disabled = true;
+  document.getElementById('btn-row-pre').style.display = 'none';
+  document.getElementById('btn-row-post').style.display = 'flex';
+}
+
+function updateStats() {
+  document.getElementById('stat-correct').textContent = stats.correct;
+  document.getElementById('stat-wrong').textContent = stats.wrong;
+  const total = stats.correct + stats.wrong;
+  document.getElementById('stat-acc').textContent = total ? Math.round(100 * stats.correct / total) + '%' : '0%';
+  document.getElementById('stat-streak').textContent = stats.streak;
+}
+
+// ─── Event listeners ────────────────────────────────────────────────
+document.getElementById('btn-check').addEventListener('click', submitAnswer);
+document.getElementById('btn-skip').addEventListener('click', skipQuestion);
+document.getElementById('btn-next').addEventListener('click', nextQuestion);
+
+document.getElementById('answer-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    if (answered) {
+      nextQuestion();
+    } else {
+      submitAnswer();
+    }
+  }
+});
+
+// Mode toggle
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    mode = this.dataset.mode;
+    if (!answered) {
+      document.getElementById('answer-input').placeholder =
+        mode === 'full' ? 'article + noun...' : 'ending only...';
+    }
+  });
+});
+
+// Filter changes reset streak but keep totals
+document.querySelectorAll('.filters input').forEach(cb => {
+  cb.addEventListener('change', function() {
+    if (!answered) nextQuestion();
+  });
+});
+
+// Reference toggle
+document.getElementById('ref-toggle').addEventListener('click', function() {
+  this.classList.toggle('open');
+  document.getElementById('ref-tables').classList.toggle('open');
+});
+
+// ─── Init ───────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const response = await fetch(SHEET_URL);
+    const csv = await response.text();
+    const vocab = parseCSV(csv);
+    allNouns = vocab.filter(entry =>
+      entry.pos === 'noun' && entry.stem && entry.gender && entry.type
+    );
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('game').style.display = 'block';
+
+    if (allNouns.length === 0) {
+      document.getElementById('lexical').textContent = '—';
+      document.getElementById('meaning').textContent = 'No nouns found in vocabulary sheet';
+      return;
+    }
+
+    nextQuestion();
+  } catch (err) {
+    document.getElementById('loading').innerHTML =
+      '<div style="color:#A05252;">Failed to load vocabulary.<br><small>' + err.message + '</small></div>';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
