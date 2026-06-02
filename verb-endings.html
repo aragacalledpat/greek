@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Who's Doing It? — Greek Verb Endings Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: #FFF8F0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      overflow-x: hidden;
+    }
+
+    .app {
+      max-width: 640px;
+      width: 100%;
+      position: relative;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      color: #bbb;
+      text-decoration: none;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .back-link:hover { color: #888; }
+
+    /* --- Streak counter --- */
+    .streak {
+      position: fixed;
+      top: 16px;
+      right: 20px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 20px;
+      color: #FF6B35;
+      z-index: 100;
+      display: none;
+    }
+
+    /* --- Splash screen --- */
+    .splash {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+    .splash-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 52px;
+      color: #5B3E96;
+      margin-bottom: 0.75rem;
+      line-height: 1.1;
+    }
+    .splash-subtitle {
+      font-size: 18px;
+      color: #888;
+      margin-bottom: 2.5rem;
+      line-height: 1.5;
+    }
+    .splash-btn {
+      font-family: 'Fredoka One', cursive;
+      font-size: 28px;
+      color: #fff;
+      background: linear-gradient(135deg, #FF6B35, #F7C948);
+      border: none;
+      border-radius: 18px;
+      padding: 18px 56px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(255, 107, 53, 0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .splash-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 28px rgba(255, 107, 53, 0.45);
+    }
+    .splash-btn:active { transform: scale(0.97); }
+
+    /* --- Game screen --- */
+    .game { }
+
+    .greek-sentence {
+      font-family: 'Noto Serif', serif;
+      font-size: 30px;
+      text-align: center;
+      color: #333;
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .greek-sentence .word-inline {
+      transition: color 0.3s;
+    }
+    .greek-sentence .word-inline.subject-done { color: #4CAF50; font-weight: 700; }
+    .greek-sentence .word-inline.object-done { color: #2196F3; font-weight: 700; }
+    .greek-sentence .word-inline.object2-done { color: #2196F3; font-weight: 700; }
+
+    .prompt {
+      font-family: 'Fredoka One', cursive;
+      font-size: 22px;
+      text-align: center;
+      color: #5B3E96;
+      margin-bottom: 1.25rem;
+      line-height: 1.4;
+    }
+    .prompt-detail {
+      font-family: 'Nunito', sans-serif;
+      font-size: 15px;
+      text-align: center;
+      color: #999;
+      margin-top: -0.75rem;
+      margin-bottom: 1.25rem;
+      font-weight: 600;
+    }
+
+    /* --- Word group buttons --- */
+    .word-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .word-btn {
+      font-family: 'Noto Serif', serif;
+      font-size: 24px;
+      background: #fff;
+      color: #333;
+      border: 2.5px solid #e0d8f0;
+      border-radius: 14px;
+      padding: 14px 24px;
+      min-height: 54px;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+      transition: transform 0.12s, border-color 0.2s, background 0.2s, box-shadow 0.2s;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .word-btn:hover:not(:disabled) {
+      transform: scale(1.05);
+      border-color: #c4b8e0;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    .word-btn:active:not(:disabled) { transform: scale(0.97); }
+    .word-btn:disabled { cursor: default; opacity: 1; }
+    .word-btn.correct {
+      background: #E8F5E9;
+      border-color: #4CAF50;
+      color: #2E7D32;
+    }
+    .word-btn.wrong {
+      background: #FFEBEE;
+      border-color: #F44336;
+      color: #C62828;
+      animation: shake 0.4s ease;
+    }
+    .word-btn.grayed {
+      background: #f0f0f0;
+      border-color: #ddd;
+      color: #bbb;
+      cursor: default;
+    }
+    .word-btn.subject-highlight {
+      background: #E8F5E9;
+      border-color: #4CAF50;
+      color: #2E7D32;
+    }
+    .word-btn.object-highlight {
+      background: #E3F2FD;
+      border-color: #2196F3;
+      color: #1565C0;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      15% { transform: translateX(-8px); }
+      30% { transform: translateX(8px); }
+      45% { transform: translateX(-6px); }
+      60% { transform: translateX(6px); }
+      75% { transform: translateX(-3px); }
+      90% { transform: translateX(3px); }
+    }
+
+    /* --- Multiple choice buttons --- */
+    .choices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .choice-btn {
+      font-family: 'Nunito', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      background: #fff;
+      color: #333;
+      border: 2.5px solid #e0d8f0;
+      border-radius: 14px;
+      padding: 14px 28px;
+      min-height: 54px;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+      transition: transform 0.12s, border-color 0.2s, background 0.2s;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .choice-btn:hover:not(:disabled) {
+      transform: scale(1.05);
+      border-color: #c4b8e0;
+    }
+    .choice-btn:active:not(:disabled) { transform: scale(0.97); }
+    .choice-btn:disabled { cursor: default; }
+    .choice-btn.correct {
+      background: #E8F5E9;
+      border-color: #4CAF50;
+      color: #2E7D32;
+    }
+    .choice-btn.wrong {
+      background: #FFEBEE;
+      border-color: #F44336;
+      color: #C62828;
+      animation: shake 0.4s ease;
+    }
+
+    /* --- Feedback --- */
+    .feedback {
+      text-align: center;
+      font-family: 'Fredoka One', cursive;
+      font-size: 24px;
+      min-height: 40px;
+      margin: 0.75rem 0;
+      transition: opacity 0.3s;
+    }
+    .feedback.success { color: #4CAF50; }
+    .feedback.error { color: #F44336; }
+
+    /* --- Translation reveal --- */
+    .translation-box {
+      text-align: center;
+      margin: 1.5rem 0;
+      padding: 1.5rem;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      animation: fadeSlideIn 0.6s ease;
+    }
+    .translation-label {
+      font-family: 'Fredoka One', cursive;
+      font-size: 16px;
+      color: #bbb;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .translation-text {
+      font-size: 26px;
+      font-weight: 700;
+      color: #333;
+      line-height: 1.5;
+    }
+    .translation-text .subj { color: #4CAF50; }
+    .translation-text .obj { color: #2196F3; }
+
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .next-btn {
+      display: block;
+      margin: 1.5rem auto 0;
+      font-family: 'Fredoka One', cursive;
+      font-size: 22px;
+      color: #fff;
+      background: linear-gradient(135deg, #5B3E96, #7E57C2);
+      border: none;
+      border-radius: 14px;
+      padding: 16px 48px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(91, 62, 150, 0.3);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .next-btn:hover {
+      transform: scale(1.04);
+      box-shadow: 0 6px 22px rgba(91, 62, 150, 0.4);
+    }
+    .next-btn:active { transform: scale(0.97); }
+
+    /* --- Celebration overlay --- */
+    .celebration-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .celebration-overlay.show {
+      display: flex;
+      animation: fadeSlideIn 0.4s ease;
+    }
+    .celebration-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 2.5rem 3rem;
+      text-align: center;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+      max-width: 400px;
+    }
+    .celebration-icon { font-size: 64px; margin-bottom: 0.5rem; }
+    .celebration-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 32px;
+      color: #5B3E96;
+      margin-bottom: 0.5rem;
+    }
+    .celebration-text {
+      font-size: 18px;
+      color: #888;
+      margin-bottom: 1.5rem;
+    }
+    .celebration-btn {
+      font-family: 'Fredoka One', cursive;
+      font-size: 18px;
+      color: #fff;
+      background: linear-gradient(135deg, #FF6B35, #F7C948);
+      border: none;
+      border-radius: 12px;
+      padding: 12px 36px;
+      cursor: pointer;
+    }
+
+    /* --- Confetti / stars --- */
+    .stars-container {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+      overflow: hidden;
+    }
+    .star {
+      position: absolute;
+      font-size: 28px;
+      animation: starFall 1s ease-out forwards;
+    }
+    @keyframes starFall {
+      0% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+      100% { opacity: 0; transform: translateY(120px) scale(0.3) rotate(180deg); }
+    }
+
+    .hidden { display: none !important; }
+
+    /* --- Verb-endings additions --- */
+    .verb-display {
+      font-family: 'Noto Serif', serif;
+      font-size: 44px;
+      text-align: center;
+      color: #333;
+      line-height: 1.4;
+      margin-bottom: 1.5rem;
+      padding: 1.5rem 1rem;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .stem { color: #555; }
+    .ending { color: #FF6B35; font-weight: 700; }
+    .contracted-result { color: #4CAF50; font-weight: 700; }
+    .contract-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .contract-arrow .arrow { color: #aaa; font-weight: 700; }
+    .endings-key {
+      font-size: 14px;
+      color: #aaa;
+      text-align: center;
+      line-height: 1.6;
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 500px) {
+      .splash-title { font-size: 38px; }
+      .splash-btn { font-size: 22px; padding: 14px 40px; }
+      .greek-sentence { font-size: 24px; }
+      .word-btn { font-size: 20px; padding: 12px 18px; }
+      .prompt { font-size: 18px; }
+      .choice-btn { font-size: 18px; padding: 12px 20px; }
+      .translation-text { font-size: 22px; }
+      .verb-display { font-size: 34px; padding: 1.25rem 0.75rem; }
+      .endings-key { font-size: 13px; }
+      .contract-arrow { gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <a class="back-link" href="index.html">‹ All games</a>
+
+  <div class="streak" id="streak">🔥 Streak: 0</div>
+
+  <!-- Splash Screen -->
+  <div class="splash" id="splash">
+    <div class="splash-title">Who's Doing It?</div>
+    <div class="splash-subtitle">Read the ending — figure out who's doing the action!</div>
+    <button class="splash-btn" onclick="startGame()">Let's Go!</button>
+  </div>
+
+  <!-- Game Screen -->
+  <div class="game hidden" id="game">
+    <div class="verb-display" id="verb-display"></div>
+    <div class="prompt" id="prompt"></div>
+    <div class="prompt-detail hidden" id="prompt-detail"></div>
+    <div id="interaction-area"></div>
+    <div class="endings-key hidden" id="endings-key"></div>
+    <div class="feedback" id="feedback"></div>
+    <div id="reveal-area"></div>
+  </div>
+</div>
+
+<!-- Celebration overlay -->
+<div class="celebration-overlay" id="celebration">
+  <div class="celebration-card">
+    <div class="celebration-icon" id="celeb-icon">⭐</div>
+    <div class="celebration-title" id="celeb-title"></div>
+    <div class="celebration-text" id="celeb-text"></div>
+    <button class="celebration-btn" onclick="closeCelebration()">Keep Going!</button>
+  </div>
+</div>
+
+<!-- Stars container for mini celebrations -->
+<div class="stars-container" id="stars-container"></div>
+
+<script>
+/* ----------------------------- Data model ----------------------------- */
+const VERB_LEMMAS = {
+  "παιδευ": { meaning: "educate", type: "thematic" },
+  "πεμπ":   { meaning: "send",    type: "thematic" },
+  "ἐχ":     { meaning: "have",    type: "thematic" },
+  "γραφ":   { meaning: "write",   type: "thematic" },
+  "βλεπ":   { meaning: "see",     type: "thematic" },
+  "βαλ":    { meaning: "throw",   type: "thematic" },
+  "ἀκου":   { meaning: "hear",    type: "thematic" },
+  "βαιν":   { meaning: "go",      type: "thematic" },
+  "πλε":    { meaning: "sail",    type: "contract-e" },
+  "ὁρα":    { meaning: "see",     type: "contract-a" }
+};
+
+const PERSONS = [
+  { key: "1s", english: "I" },
+  { key: "2s", english: "you" },
+  { key: "3s", english: "he/she/it" },
+  { key: "1p", english: "we" },
+  { key: "2p", english: "you all" },
+  { key: "3p", english: "they" }
+];
+
+const THEMATIC_ENDINGS = {
+  "1s": "ω", "2s": "εις", "3s": "ει",
+  "1p": "ομεν", "2p": "ετε", "3p": "ουσι"
+};
+
+const CONTRACT_FORMS = {
+  "πλε": { // ε-contract
+    "1s": "πλέω",  "2s": "πλεῖς", "3s": "πλεῖ",
+    "1p": "πλέομεν","2p": "πλεῖτε","3p": "πλέουσι"
+  },
+  "ὁρα": { // α-contract
+    "1s": "ὁρῶ",   "2s": "ὁρᾷς",  "3s": "ὁρᾷ",
+    "1p": "ὁρῶμεν","2p": "ὁρᾶτε", "3p": "ὁρῶσι"
+  }
+};
+
+// Raw pieces for Screen B's uncontracted → contracted reveal: [stem, ending, contracted]
+const CONTRACT_RAW = {
+  "πλε": { "2s": ["πλε", "εις", "πλεῖς"], "3s": ["πλε","ει","πλεῖ"], "1p":["πλε","ομεν","πλέομεν"], "2p":["πλε","ετε","πλεῖτε"], "3p":["πλε","ουσι","πλέουσι"], "1s":["πλε","ω","πλέω"] },
+  "ὁρα": { "2s": ["ὁρα", "εις", "ὁρᾷς"], "3s": ["ὁρα","ει","ὁρᾷ"], "1p":["ὁρα","ομεν","ὁρῶμεν"], "2p":["ὁρα","ετε","ὁρᾶτε"], "3p":["ὁρα","ουσι","ὁρῶσι"], "1s":["ὁρα","ω","ὁρῶ"] }
+};
+
+const ENDINGS_KEY_HTML =
+  "-ω = I &middot; -εις = you &middot; -ει = he/she/it &middot; -ομεν = we &middot; -ετε = you all &middot; -ουσι(ν) = they";
+const CONTRACT_KEY_TEXT =
+  "Some verbs squish the vowels together — but the person stays the same!";
+
+const ALL_MEANINGS = [...new Set(Object.values(VERB_LEMMAS).map(v => v.meaning))];
+
+/* ----------------------------- State ----------------------------- */
+let queue = [];
+let current = null;   // { stem, person, type: "thematic" | "contract" }
+let step = "";
+let streak = 0;
+let madeErrorThisRound = false;
+let locked = false;
+
+/* ----------------------------- Helpers ----------------------------- */
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function personEnglish(key) { return PERSONS.find(p => p.key === key).english; }
+
+function thirdSingular(meaning) {
+  if (meaning === "have") return "has";
+  if (meaning === "go") return "goes";
+  return meaning + "s";
+}
+
+function englishVerb(meaning, personKey) {
+  return personKey === "3s" ? thirdSingular(meaning) : meaning;
+}
+
+function roundForm(r) {
+  if (r.type === "contract") return CONTRACT_FORMS[r.stem][r.person];
+  return r.stem + THEMATIC_ENDINGS[r.person];
+}
+
+function sameRound(a, b) { return a.stem === b.stem && a.person === b.person; }
+
+/* ----------------------------- Queue ----------------------------- */
+function buildBatch() {
+  const personKeys = PERSONS.map(p => p.key);
+  const thematicStems = Object.keys(VERB_LEMMAS).filter(s => VERB_LEMMAS[s].type === "thematic");
+  const contractStems = Object.keys(VERB_LEMMAS).filter(s => VERB_LEMMAS[s].type.indexOf("contract") === 0);
+
+  // Thematic rounds: one per person so all six endings get drilled, random verbs.
+  const thematic = shuffle(personKeys.slice()).map(pk => ({
+    stem: pick(thematicStems), person: pk, type: "thematic"
+  }));
+  // Guarantee Nova's requested verbs show up.
+  ["βαλ", "βλεπ"].forEach(stem => {
+    if (!thematic.some(r => r.stem === stem)) {
+      thematic.push({ stem, person: pick(personKeys), type: "thematic" });
+    }
+  });
+  shuffle(thematic);
+
+  // Contract rounds: 3 per batch across both contract verbs.
+  const contract = [];
+  for (let i = 0; i < 3; i++) {
+    contract.push({ stem: pick(contractStems), person: pick(personKeys), type: "contract" });
+  }
+
+  // Interleave: drop a contract round after roughly every 3 thematic rounds.
+  const merged = [];
+  let ci = 0;
+  thematic.forEach((r, idx) => {
+    merged.push(r);
+    if ((idx + 1) % 3 === 0 && ci < contract.length) merged.push(contract[ci++]);
+  });
+  while (ci < contract.length) merged.push(contract[ci++]);
+
+  return merged;
+}
+
+function refillQueue() {
+  const batch = buildBatch();
+  if (current && batch.length && sameRound(batch[0], current)) {
+    const j = batch.findIndex(r => !sameRound(r, current));
+    if (j > 0) { const t = batch[0]; batch[0] = batch[j]; batch[j] = t; }
+  }
+  queue = batch;
+}
+
+function pickRound() {
+  if (queue.length === 0) refillQueue();
+  return queue.shift();
+}
+
+/* ----------------------------- Flow ----------------------------- */
+function startGame() {
+  document.getElementById("splash").classList.add("hidden");
+  document.getElementById("game").classList.remove("hidden");
+  document.getElementById("streak").style.display = "block";
+  refillQueue();
+  nextRound();
+}
+
+function nextRound() {
+  current = pickRound();
+  madeErrorThisRound = false;
+  clearFeedback();
+  document.getElementById("reveal-area").innerHTML = "";
+  showScreen("A");
+}
+
+function clearFeedback() {
+  const fb = document.getElementById("feedback");
+  fb.textContent = "";
+  fb.className = "feedback";
+}
+
+function setFeedback(text, type) {
+  const fb = document.getElementById("feedback");
+  fb.textContent = text;
+  fb.className = "feedback " + type;
+}
+
+function showScreen(s) {
+  step = s;
+  clearFeedback();
+  const verbEl = document.getElementById("verb-display");
+  const interaction = document.getElementById("interaction-area");
+  const detail = document.getElementById("prompt-detail");
+  const key = document.getElementById("endings-key");
+  const prompt = document.getElementById("prompt");
+
+  detail.classList.add("hidden");
+  key.classList.add("hidden");
+  interaction.innerHTML = "";
+  document.getElementById("reveal-area").innerHTML = "";
+
+  const r = current;
+
+  if (s === "A") {
+    verbEl.textContent = roundForm(r);
+    prompt.textContent = "Who is doing the action?";
+    detail.textContent = r.type === "contract"
+      ? "Careful — the ending is hiding!"
+      : "Look at the ending!";
+    detail.classList.remove("hidden");
+    renderPersonChoices();
+  } else if (s === "B") {
+    renderScreenB(r);
+  } else if (s === "C") {
+    verbEl.textContent = roundForm(r);
+    prompt.textContent = "What does it mean?";
+    renderMeaningChoices();
+  }
+}
+
+/* Screen A — identify the person */
+function renderPersonChoices() {
+  const area = document.getElementById("interaction-area");
+  const correct = personEnglish(current.person);
+  const others = shuffle(PERSONS.filter(p => p.key !== current.person).map(p => p.english));
+  const choices = shuffle([correct, ...others.slice(0, 3)]);
+
+  const wrap = document.createElement("div");
+  wrap.className = "choices";
+  choices.forEach(c => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.textContent = c;
+    btn.addEventListener("click", () =>
+      handleChoice(btn, c === correct, () => showScreen("B"), "Not quite — look at the ending!"));
+    wrap.appendChild(btn);
+  });
+  area.appendChild(wrap);
+}
+
+/* Screen B — reinforce the ending (teaching beat, auto-advances) */
+function renderScreenB(r) {
+  const verbEl = document.getElementById("verb-display");
+  const interaction = document.getElementById("interaction-area");
+  const detail = document.getElementById("prompt-detail");
+  const key = document.getElementById("endings-key");
+  const prompt = document.getElementById("prompt");
+
+  if (r.type === "contract") {
+    const raw = CONTRACT_RAW[r.stem][r.person]; // [stem, ending, contracted]
+    verbEl.innerHTML =
+      `<div class="contract-arrow">` +
+        `<span class="stem">${raw[0]}-</span>` +
+        `<span class="arrow">+</span>` +
+        `<span class="ending">-${raw[1]}</span>` +
+        `<span class="arrow">→</span>` +
+        `<span class="contracted-result">${raw[2]}</span>` +
+      `</div>`;
+    prompt.textContent = "The vowels squish together!";
+    key.textContent = CONTRACT_KEY_TEXT;
+  } else {
+    verbEl.innerHTML =
+      `<span class="stem">${r.stem}</span><span class="ending">${THEMATIC_ENDINGS[r.person]}</span>`;
+    prompt.textContent = "That ending means...";
+    key.innerHTML = ENDINGS_KEY_HTML;
+  }
+
+  key.classList.remove("hidden");
+  detail.classList.add("hidden");
+
+  interaction.innerHTML =
+    `<div class="choices"><button class="choice-btn correct" disabled>${personEnglish(r.person)}</button></div>`;
+
+  setFeedback("🎉 That's it!", "success");
+  setTimeout(() => showScreen("C"), 1300);
+}
+
+/* Screen C — translate the whole verb (person + meaning) */
+function buildMeaningChoices(r) {
+  const meaning = VERB_LEMMAS[r.stem].meaning;
+  const correct = personEnglish(r.person) + " " + englishVerb(meaning, r.person);
+  const seen = new Set([correct]);
+  const distractors = [];
+  let guard = 0;
+
+  while (distractors.length < 3 && guard < 200) {
+    guard++;
+    let p = r.person;
+    let m = meaning;
+    const mode = Math.floor(Math.random() * 3);
+    if (mode === 0) {               // different person, same meaning
+      p = pick(PERSONS.filter(x => x.key !== r.person)).key;
+    } else if (mode === 1) {        // same person, different meaning
+      m = pick(ALL_MEANINGS.filter(x => x !== meaning));
+    } else {                        // vary both
+      p = pick(PERSONS.filter(x => x.key !== r.person)).key;
+      m = pick(ALL_MEANINGS.filter(x => x !== meaning));
+    }
+    const s = personEnglish(p) + " " + englishVerb(m, p);
+    if (!seen.has(s)) { seen.add(s); distractors.push(s); }
+  }
+
+  return { correct, choices: shuffle([correct, ...distractors]) };
+}
+
+function renderMeaningChoices() {
+  const area = document.getElementById("interaction-area");
+  const { correct, choices } = buildMeaningChoices(current);
+
+  const wrap = document.createElement("div");
+  wrap.className = "choices";
+  choices.forEach(c => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.textContent = c;
+    btn.addEventListener("click", () =>
+      handleChoice(btn, c === correct, showReveal, "Not quite — try again!"));
+    wrap.appendChild(btn);
+  });
+  area.appendChild(wrap);
+}
+
+function showReveal() {
+  const reveal = document.getElementById("reveal-area");
+  const r = current;
+  const meaning = VERB_LEMMAS[r.stem].meaning;
+  const form = roundForm(r);
+  const translation = personEnglish(r.person) + " " + englishVerb(meaning, r.person);
+
+  reveal.innerHTML = `
+    <div class="translation-box">
+      <div class="translation-label">Translation</div>
+      <div class="translation-text">${form} = <span class="subj">${translation}</span></div>
+    </div>
+    <button class="next-btn" onclick="finishRound()">Next →</button>
+  `;
+}
+
+/* ----------------------------- Choice handling ----------------------------- */
+function handleChoice(btn, isCorrect, onSuccess, wrongMsg) {
+  if (locked) return;
+  if (isCorrect) {
+    locked = true;
+    btn.classList.add("correct");
+    disableAllChoiceBtns();
+    setFeedback("🎉 Right!", "success");
+    spawnStars(btn);
+    setTimeout(() => {
+      locked = false;
+      onSuccess();
+    }, 1000);
+  } else {
+    locked = true;
+    madeErrorThisRound = true;
+    btn.classList.add("wrong");
+    setFeedback(wrongMsg || "Not quite — try again!", "error");
+    setTimeout(() => {
+      btn.classList.remove("wrong");
+      locked = false;
+    }, 600);
+  }
+}
+
+function disableAllChoiceBtns() {
+  document.querySelectorAll(".choice-btn").forEach(b => b.disabled = true);
+}
+
+/* ----------------------------- Round end / streak ----------------------------- */
+function finishRound() {
+  if (madeErrorThisRound) {
+    streak = 0;
+  } else {
+    streak++;
+  }
+  updateStreak();
+  if (!madeErrorThisRound && (streak === 5 || streak === 10 || streak === 15)) {
+    showCelebration(streak);
+  } else {
+    nextRound();
+  }
+}
+
+function updateStreak() {
+  document.getElementById("streak").textContent = "🔥 Streak: " + streak;
+}
+
+function showCelebration(n) {
+  const overlay = document.getElementById("celebration");
+  document.getElementById("celeb-icon").textContent = n >= 15 ? "🏆" : n >= 10 ? "🌟" : "⭐";
+  document.getElementById("celeb-title").textContent = n + " in a row!";
+  const msgs = {
+    5: "You're amazing!",
+    10: "Incredible work!",
+    15: "You're a Greek superstar!"
+  };
+  document.getElementById("celeb-text").textContent = msgs[n] || "Keep it up!";
+  overlay.classList.add("show");
+}
+
+function closeCelebration() {
+  document.getElementById("celebration").classList.remove("show");
+  nextRound();
+}
+
+/* ----------------------------- Stars ----------------------------- */
+function spawnStars(anchor) {
+  const container = document.getElementById("stars-container");
+  const rect = anchor.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top;
+  const emojis = ["⭐", "✨", "🌟", "💫"];
+
+  for (let i = 0; i < 6; i++) {
+    const star = document.createElement("div");
+    star.className = "star";
+    star.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    star.style.left = (cx + (Math.random() - 0.5) * 100) + "px";
+    star.style.top = (cy - 10) + "px";
+    star.style.animationDuration = (0.6 + Math.random() * 0.6) + "s";
+    container.appendChild(star);
+    setTimeout(() => star.remove(), 1200);
+  }
+}
+</script>
+
+</body>
+</html>
