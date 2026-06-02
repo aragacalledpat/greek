@@ -393,6 +393,20 @@
       flex-wrap: wrap;
     }
     .contract-arrow .arrow { color: #aaa; font-weight: 700; }
+    .prefix { color: #7E57C2; font-weight: 700; }
+    .base { color: #555; }
+    .compound-result { color: #4CAF50; font-weight: 700; }
+    .compound-build {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 0.75rem;
+      font-family: 'Noto Serif', serif;
+      font-size: 22px;
+    }
+    .compound-build .arrow { color: #aaa; font-weight: 700; }
     .endings-key {
       font-size: 14px;
       color: #aaa;
@@ -452,6 +466,7 @@
       .contract-arrow { gap: 10px; }
       .tutorial-ending { font-size: 40px; }
       .tutorial-example { font-size: 20px; }
+      .compound-build { font-size: 18px; gap: 8px; }
     }
   </style>
 </head>
@@ -515,7 +530,7 @@ const VERB_LEMMAS = {
   "ἀκου":    { meaning: "hear",    type: "thematic" },
   "βαιν":    { meaning: "go",      type: "thematic" },
   "φροντιζ": { meaning: "worry",   type: "thematic" },
-  "εἰσβαιν": { meaning: "embark",  type: "thematic" },
+  "εἰσβαιν": { meaning: "embark",  type: "compound" },
   "πλε":     { meaning: "sail",    type: "contract-e" },
   "ὁρα":     { meaning: "see",     type: "contract-a" }
 };
@@ -565,6 +580,12 @@ const CONTRACT_RAW = {
   "ὁρα": { "2s": ["ὁρα", "εις", "ὁρᾷς"], "3s": ["ὁρα","ει","ὁρᾷ"], "1p":["ὁρα","ομεν","ὁρῶμεν"], "2p":["ὁρα","ετε","ὁρᾶτε"], "3p":["ὁρα","ουσι","ὁρῶσι"], "1s":["ὁρα","ω","ὁρῶ"] }
 };
 
+// Compound verbs: prefix + base verb. Conjugation is fully regular; the prefix just rides along.
+const COMPOUND_PARTS = {
+  "εἰσβαιν": { prefix: "εἰσ", base: "βαίνω", prefixGloss: "into", baseMeaning: "go" }
+  // εἰσ ("into") + βαίνω ("go") → εἰσβαίνω ("go into / embark")
+};
+
 const ENDINGS_KEY_HTML =
   "-ω = I &middot; -εις = you &middot; -ει = he/she/it &middot; -ομεν = we &middot; -ετε = you all &middot; -ουσι(ν) = they";
 const CONTRACT_KEY_TEXT =
@@ -600,7 +621,7 @@ const NOUN_SUBJECTS = [
   { greek:"ὁ ῥαψῳδός",    eng:"the rhapsode" }
 ];
 
-// Tutorial ("Show me the endings first") — six endings, then the key, then a contract teaser.
+// Tutorial ("Show me the endings first") — six endings, the key, then the two special types.
 const TUTORIAL_STEPS = [
   { type:"ending", ending:"-ω",     eng:"I",          example:"βλέπω",    exampleEng:"I see" },
   { type:"ending", ending:"-εις",   eng:"you",        example:"βλέπεις",  exampleEng:"you see" },
@@ -609,7 +630,8 @@ const TUTORIAL_STEPS = [
   { type:"ending", ending:"-ετε",   eng:"you all",    example:"βλέπετε",  exampleEng:"you all see" },
   { type:"ending", ending:"-ουσι(ν)", eng:"they",     example:"βλέπουσι", exampleEng:"they see" },
   { type:"key" },
-  { type:"contract" }
+  { type:"contract" },
+  { type:"compound" }
 ];
 
 /* ----------------------------- State ----------------------------- */
@@ -657,9 +679,10 @@ function buildBatch() {
   const personKeys = PERSONS.map(p => p.key);
   const thematicStems = Object.keys(VERB_LEMMAS).filter(s => VERB_LEMMAS[s].type === "thematic");
   const contractStems = Object.keys(VERB_LEMMAS).filter(s => VERB_LEMMAS[s].type.indexOf("contract") === 0);
+  const compoundStems = Object.keys(VERB_LEMMAS).filter(s => VERB_LEMMAS[s].type === "compound");
 
   // Thematic rounds: TWO per person (12 total) so all six endings get drilled twice,
-  // each slot drawing a random verb for plenty of variety across the 10-verb set.
+  // each slot drawing a random verb for plenty of variety across the thematic verb set.
   const thematic = [];
   for (let pass = 0; pass < 2; pass++) {
     shuffle(personKeys.slice()).forEach(pk => {
@@ -674,20 +697,24 @@ function buildBatch() {
   });
   shuffle(thematic);
 
-  // Contract rounds: 4 per batch across both contract verbs.
-  const contract = [];
+  // Special rounds: contract (4) + compound (2), sprinkled in among the thematic rounds.
+  const special = [];
   for (let i = 0; i < 4; i++) {
-    contract.push({ stem: pick(contractStems), person: pick(personKeys), type: "contract" });
+    special.push({ stem: pick(contractStems), person: pick(personKeys), type: "contract" });
   }
+  for (let i = 0; i < 2; i++) {
+    special.push({ stem: pick(compoundStems), person: pick(personKeys), type: "compound" });
+  }
+  shuffle(special);
 
-  // Interleave: drop a contract round after roughly every 3 thematic rounds.
+  // Interleave: drop a special round after roughly every 3 thematic rounds.
   const merged = [];
   let ci = 0;
   thematic.forEach((r, idx) => {
     merged.push(r);
-    if ((idx + 1) % 3 === 0 && ci < contract.length) merged.push(contract[ci++]);
+    if ((idx + 1) % 3 === 0 && ci < special.length) merged.push(special[ci++]);
   });
-  while (ci < contract.length) merged.push(contract[ci++]);
+  while (ci < special.length) merged.push(special[ci++]);
 
   // No two adjacent rounds should be the identical verb+person pair.
   for (let i = 1; i < merged.length; i++) {
@@ -741,14 +768,25 @@ function renderTutorialCard() {
       `<div class="translation-label">The whole set</div>` +
       `<div class="endings-key" style="font-size:17px;color:#666;line-height:2;margin-top:0.5rem;">${ENDINGS_KEY_HTML}</div>`;
   } else if (stepData.type === "contract") {
-    promptEl.textContent = "One more thing!";
+    promptEl.textContent = "Squishy verbs";
     card.innerHTML =
-      `<div class="translation-label">Tricky verbs</div>` +
+      `<div class="translation-label">Squishy verbs</div>` +
       `<div class="contract-arrow" style="font-family:'Noto Serif',serif;font-size:34px;margin:0.75rem 0;">` +
         `<span class="stem">πλέω</span><span class="arrow">→</span><span class="contracted-result">πλεῖς</span>` +
       `</div>` +
       `<div class="tutorial-eng">I sail → you sail</div>` +
-      `<div style="color:#888;font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;">${CONTRACT_KEY_TEXT}</div>`;
+      `<div style="color:#888;font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;">Some verbs squish the vowels into the ending — but the person stays the same!</div>`;
+  } else if (stepData.type === "compound") {
+    promptEl.textContent = "Two-piece verbs!";
+    card.innerHTML =
+      `<div class="translation-label">Built from two words</div>` +
+      `<div class="compound-build" style="font-size:30px;margin:0.75rem 0;">` +
+        `<span class="prefix">εἰσ-</span><span class="arrow">+</span>` +
+        `<span class="base">βαίνω</span><span class="arrow">→</span>` +
+        `<span class="compound-result">εἰσβαίνω</span>` +
+      `</div>` +
+      `<div class="tutorial-eng">&ldquo;go&rdquo; → &ldquo;go into / embark&rdquo;</div>` +
+      `<div style="color:#888;font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;">A little word in front changes the meaning — but the ending works the same!</div>`;
   } else {
     promptEl.textContent = "Learn the endings!";
     card.innerHTML =
@@ -823,9 +861,10 @@ function showScreen(s) {
   if (s === "A") {
     verbEl.textContent = roundForm(r);
     prompt.textContent = "Who is doing the action?";
-    detail.textContent = r.type === "contract"
-      ? "Careful — the ending is hiding!"
-      : "Look at the ending!";
+    detail.textContent =
+      r.type === "contract" ? "Careful — the ending is hiding!" :
+      r.type === "compound" ? "It's two words stuck together — find the ending!" :
+      "Look at the ending!";
     detail.classList.remove("hidden");
     renderPersonChoices();
   } else if (s === "B") {
@@ -877,6 +916,22 @@ function renderScreenB(r) {
       `</div>`;
     prompt.textContent = "The vowels squish together!";
     key.textContent = CONTRACT_KEY_TEXT;
+  } else if (r.type === "compound") {
+    // Primary lesson is still the ending (orange); the prefix-build is a secondary note (purple).
+    const c = COMPOUND_PARTS[r.stem];
+    const full = roundForm(r);
+    verbEl.textContent = full;
+    prompt.textContent = "That ending means...";
+    detail.innerHTML =
+      `ending: <span class="ending">-${THEMATIC_ENDINGS[r.person]}</span>` +
+      `<div class="compound-build">` +
+        `<span class="prefix">${c.prefix}-</span>` +
+        `<span class="arrow">+</span>` +
+        `<span class="base">${c.base}</span>` +
+        `<span class="arrow">→</span>` +
+        `<span class="compound-result">${full}</span>` +
+      `</div>`;
+    key.innerHTML = ENDINGS_KEY_HTML;
   } else {
     // Show the full accented form big, with the bare ending isolated in orange below it.
     // (We don't string-split the accented word, since the accent sits on the stem vowel.)
