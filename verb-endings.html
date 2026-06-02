@@ -400,6 +400,44 @@
       line-height: 1.6;
       margin-top: 1rem;
     }
+    .word-btn.verb-highlight {
+      background: #FFF3E0;
+      border-color: #FF6B35;
+      color: #E65100;
+    }
+
+    /* Splash secondary / tutorial */
+    .splash-secondary {
+      display: inline-block;
+      margin-top: 1.5rem;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      color: #aaa;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .splash-secondary:hover { color: #888; }
+    .tutorial { text-align: center; padding: 1rem 0; }
+    .tutorial-skip { display: block; margin-top: 1rem; }
+    .tutorial-ending {
+      font-family: 'Noto Serif', serif;
+      font-size: 50px;
+      color: #FF6B35;
+      font-weight: 700;
+      margin: 0.5rem 0;
+    }
+    .tutorial-eng {
+      font-size: 22px;
+      font-weight: 700;
+      color: #5B3E96;
+      margin-bottom: 0.75rem;
+    }
+    .tutorial-example {
+      font-family: 'Noto Serif', serif;
+      font-size: 24px;
+      color: #333;
+    }
 
     @media (max-width: 500px) {
       .splash-title { font-size: 38px; }
@@ -412,6 +450,8 @@
       .verb-display { font-size: 34px; padding: 1.25rem 0.75rem; }
       .endings-key { font-size: 13px; }
       .contract-arrow { gap: 10px; }
+      .tutorial-ending { font-size: 40px; }
+      .tutorial-example { font-size: 20px; }
     }
   </style>
 </head>
@@ -427,6 +467,15 @@
     <div class="splash-title">Who's Doing It?</div>
     <div class="splash-subtitle">Read the ending — figure out who's doing the action!</div>
     <button class="splash-btn" onclick="startGame()">Let's Go!</button>
+    <a class="splash-secondary" onclick="showTutorial()">Show me the endings first</a>
+  </div>
+
+  <!-- Tutorial Screen -->
+  <div class="tutorial hidden" id="tutorial">
+    <div class="prompt" id="tutorial-prompt">Learn the endings!</div>
+    <div class="translation-box" id="tutorial-card"></div>
+    <button class="next-btn" id="tutorial-next" onclick="tutorialNext()">Next →</button>
+    <a class="splash-secondary tutorial-skip" onclick="skipTutorial()">Skip to game</a>
   </div>
 
   <!-- Game Screen -->
@@ -457,16 +506,32 @@
 <script>
 /* ----------------------------- Data model ----------------------------- */
 const VERB_LEMMAS = {
-  "παιδευ": { meaning: "educate", type: "thematic" },
-  "πεμπ":   { meaning: "send",    type: "thematic" },
-  "ἐχ":     { meaning: "have",    type: "thematic" },
-  "γραφ":   { meaning: "write",   type: "thematic" },
-  "βλεπ":   { meaning: "see",     type: "thematic" },
-  "βαλ":    { meaning: "throw",   type: "thematic" },
-  "ἀκου":   { meaning: "hear",    type: "thematic" },
-  "βαιν":   { meaning: "go",      type: "thematic" },
-  "πλε":    { meaning: "sail",    type: "contract-e" },
-  "ὁρα":    { meaning: "see",     type: "contract-a" }
+  "παιδευ":  { meaning: "educate", type: "thematic" },
+  "πεμπ":    { meaning: "send",    type: "thematic" },
+  "ἐχ":      { meaning: "have",    type: "thematic" },
+  "γραφ":    { meaning: "write",   type: "thematic" },
+  "βλεπ":    { meaning: "see",     type: "thematic" },
+  "βαλλ":    { meaning: "throw",   type: "thematic" },
+  "ἀκου":    { meaning: "hear",    type: "thematic" },
+  "βαιν":    { meaning: "go",      type: "thematic" },
+  "φροντιζ": { meaning: "worry",   type: "thematic" },
+  "εἰσβαιν": { meaning: "embark",  type: "thematic" },
+  "πλε":     { meaning: "sail",    type: "contract-e" },
+  "ὁρα":     { meaning: "see",     type: "contract-a" }
+};
+
+// Fully accented thematic forms (hardcoded so on-screen Greek is always accented).
+const THEMATIC_FORMS = {
+  "παιδευ":  { "1s":"παιδεύω","2s":"παιδεύεις","3s":"παιδεύει","1p":"παιδεύομεν","2p":"παιδεύετε","3p":"παιδεύουσι" },
+  "πεμπ":    { "1s":"πέμπω","2s":"πέμπεις","3s":"πέμπει","1p":"πέμπομεν","2p":"πέμπετε","3p":"πέμπουσι" },
+  "ἐχ":      { "1s":"ἔχω","2s":"ἔχεις","3s":"ἔχει","1p":"ἔχομεν","2p":"ἔχετε","3p":"ἔχουσι" },
+  "γραφ":    { "1s":"γράφω","2s":"γράφεις","3s":"γράφει","1p":"γράφομεν","2p":"γράφετε","3p":"γράφουσι" },
+  "βλεπ":    { "1s":"βλέπω","2s":"βλέπεις","3s":"βλέπει","1p":"βλέπομεν","2p":"βλέπετε","3p":"βλέπουσι" },
+  "βαλλ":    { "1s":"βάλλω","2s":"βάλλεις","3s":"βάλλει","1p":"βάλλομεν","2p":"βάλλετε","3p":"βάλλουσι" },
+  "ἀκου":    { "1s":"ἀκούω","2s":"ἀκούεις","3s":"ἀκούει","1p":"ἀκούομεν","2p":"ἀκούετε","3p":"ἀκούουσι" },
+  "βαιν":    { "1s":"βαίνω","2s":"βαίνεις","3s":"βαίνει","1p":"βαίνομεν","2p":"βαίνετε","3p":"βαίνουσι" },
+  "φροντιζ": { "1s":"φροντίζω","2s":"φροντίζεις","3s":"φροντίζει","1p":"φροντίζομεν","2p":"φροντίζετε","3p":"φροντίζουσι" },
+  "εἰσβαιν": { "1s":"εἰσβαίνω","2s":"εἰσβαίνεις","3s":"εἰσβαίνει","1p":"εἰσβαίνομεν","2p":"εἰσβαίνετε","3p":"εἰσβαίνουσι" }
 };
 
 const PERSONS = [
@@ -507,6 +572,46 @@ const CONTRACT_KEY_TEXT =
 
 const ALL_MEANINGS = [...new Set(Object.values(VERB_LEMMAS).map(v => v.meaning))];
 
+// Screen D — frames for embedding the verb in a tiny, known-vocab sentence.
+const SENTENCE_FRAMES = {
+  "βλεπ":    { kind:"transitive", obj:"τὸ πλοῖον",   objEng:"the ship" },
+  "γραφ":    { kind:"transitive", obj:"τοὺς λόγους", objEng:"the words" },
+  "πεμπ":    { kind:"transitive", obj:"τὰ δῶρα",     objEng:"the gifts" },
+  "βαλλ":    { kind:"transitive", obj:"τὸ βιβλίον",  objEng:"the book" },
+  "ἐχ":      { kind:"transitive", obj:"τὴν τέχνην",  objEng:"the skill" },
+  "παιδευ":  { kind:"transitive", obj:"τὸν ναύτην",  objEng:"the sailor" },
+  "ἀκου":    { kind:"transitive", obj:"τὸν ῥαψῳδόν", objEng:"the rhapsode" },
+  "φροντιζ": { kind:"intransitive" },
+  "βαιν":    { kind:"prep", phrase:"πρὸς τὴν ἀγοράν", phraseEng:"to the marketplace" },
+  "εἰσβαιν": { kind:"prep", phrase:"εἰς τὸ πλοῖον",   phraseEng:"onto the ship" },
+  "πλε":     { kind:"prep", phrase:"εἰς τὴν νῆσον",   phraseEng:"to the island" },
+  "ὁρα":     { kind:"transitive", obj:"τὴν νῆσον",    objEng:"the island" }
+};
+
+const PRONOUN_SUBJECTS = { "1s":"ἐγώ", "2s":"σύ", "1p":"ἡμεῖς" };
+const PRONOUN_ENG      = { "1s":"I",   "2s":"you", "1p":"we" };
+
+// Singular nominative noun subjects (all from the vocab list) for 3rd-singular rounds.
+const NOUN_SUBJECTS = [
+  { greek:"ὁ ναύτης",     eng:"the sailor" },
+  { greek:"ὁ ἄνθρωπος",   eng:"the man" },
+  { greek:"ἡ θεός",       eng:"the goddess" },
+  { greek:"ὁ κυβερνήτης", eng:"the captain" },
+  { greek:"ὁ ῥαψῳδός",    eng:"the rhapsode" }
+];
+
+// Tutorial ("Show me the endings first") — six endings, then the key, then a contract teaser.
+const TUTORIAL_STEPS = [
+  { type:"ending", ending:"-ω",     eng:"I",          example:"βλέπω",    exampleEng:"I see" },
+  { type:"ending", ending:"-εις",   eng:"you",        example:"βλέπεις",  exampleEng:"you see" },
+  { type:"ending", ending:"-ει",    eng:"he/she/it",  example:"βλέπει",   exampleEng:"he/she/it sees" },
+  { type:"ending", ending:"-ομεν",  eng:"we",         example:"βλέπομεν", exampleEng:"we see" },
+  { type:"ending", ending:"-ετε",   eng:"you all",    example:"βλέπετε",  exampleEng:"you all see" },
+  { type:"ending", ending:"-ουσι(ν)", eng:"they",     example:"βλέπουσι", exampleEng:"they see" },
+  { type:"key" },
+  { type:"contract" }
+];
+
 /* ----------------------------- State ----------------------------- */
 let queue = [];
 let current = null;   // { stem, person, type: "thematic" | "contract" }
@@ -514,6 +619,7 @@ let step = "";
 let streak = 0;
 let madeErrorThisRound = false;
 let locked = false;
+let tutorialIndex = 0;
 
 /* ----------------------------- Helpers ----------------------------- */
 function shuffle(arr) {
@@ -531,6 +637,7 @@ function personEnglish(key) { return PERSONS.find(p => p.key === key).english; }
 function thirdSingular(meaning) {
   if (meaning === "have") return "has";
   if (meaning === "go") return "goes";
+  if (/[^aeiou]y$/.test(meaning)) return meaning.slice(0, -1) + "ies"; // worry -> worries
   return meaning + "s";
 }
 
@@ -540,7 +647,7 @@ function englishVerb(meaning, personKey) {
 
 function roundForm(r) {
   if (r.type === "contract") return CONTRACT_FORMS[r.stem][r.person];
-  return r.stem + THEMATIC_ENDINGS[r.person];
+  return THEMATIC_FORMS[r.stem][r.person];
 }
 
 function sameRound(a, b) { return a.stem === b.stem && a.person === b.person; }
@@ -551,21 +658,25 @@ function buildBatch() {
   const thematicStems = Object.keys(VERB_LEMMAS).filter(s => VERB_LEMMAS[s].type === "thematic");
   const contractStems = Object.keys(VERB_LEMMAS).filter(s => VERB_LEMMAS[s].type.indexOf("contract") === 0);
 
-  // Thematic rounds: one per person so all six endings get drilled, random verbs.
-  const thematic = shuffle(personKeys.slice()).map(pk => ({
-    stem: pick(thematicStems), person: pk, type: "thematic"
-  }));
+  // Thematic rounds: TWO per person (12 total) so all six endings get drilled twice,
+  // each slot drawing a random verb for plenty of variety across the 10-verb set.
+  const thematic = [];
+  for (let pass = 0; pass < 2; pass++) {
+    shuffle(personKeys.slice()).forEach(pk => {
+      thematic.push({ stem: pick(thematicStems), person: pk, type: "thematic" });
+    });
+  }
   // Guarantee Nova's requested verbs show up.
-  ["βαλ", "βλεπ"].forEach(stem => {
+  ["βαλλ", "βλεπ"].forEach(stem => {
     if (!thematic.some(r => r.stem === stem)) {
       thematic.push({ stem, person: pick(personKeys), type: "thematic" });
     }
   });
   shuffle(thematic);
 
-  // Contract rounds: 3 per batch across both contract verbs.
+  // Contract rounds: 4 per batch across both contract verbs.
   const contract = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     contract.push({ stem: pick(contractStems), person: pick(personKeys), type: "contract" });
   }
 
@@ -577,6 +688,20 @@ function buildBatch() {
     if ((idx + 1) % 3 === 0 && ci < contract.length) merged.push(contract[ci++]);
   });
   while (ci < contract.length) merged.push(contract[ci++]);
+
+  // No two adjacent rounds should be the identical verb+person pair.
+  for (let i = 1; i < merged.length; i++) {
+    if (sameRound(merged[i], merged[i - 1])) {
+      for (let j = i + 1; j < merged.length; j++) {
+        const okPrev = !sameRound(merged[j], merged[i - 1]);
+        const okNext = (i + 1 >= merged.length) || !sameRound(merged[j], merged[i + 1]);
+        if (okPrev && okNext) {
+          const t = merged[i]; merged[i] = merged[j]; merged[j] = t;
+          break;
+        }
+      }
+    }
+  }
 
   return merged;
 }
@@ -593,6 +718,60 @@ function refillQueue() {
 function pickRound() {
   if (queue.length === 0) refillQueue();
   return queue.shift();
+}
+
+/* ----------------------------- Tutorial ----------------------------- */
+function showTutorial() {
+  document.getElementById("splash").classList.add("hidden");
+  document.getElementById("tutorial").classList.remove("hidden");
+  tutorialIndex = 0;
+  renderTutorialCard();
+}
+
+function renderTutorialCard() {
+  const card = document.getElementById("tutorial-card");
+  const nextBtn = document.getElementById("tutorial-next");
+  const promptEl = document.getElementById("tutorial-prompt");
+  const stepData = TUTORIAL_STEPS[tutorialIndex];
+  const isLast = tutorialIndex === TUTORIAL_STEPS.length - 1;
+
+  if (stepData.type === "key") {
+    promptEl.textContent = "All six endings";
+    card.innerHTML =
+      `<div class="translation-label">The whole set</div>` +
+      `<div class="endings-key" style="font-size:17px;color:#666;line-height:2;margin-top:0.5rem;">${ENDINGS_KEY_HTML}</div>`;
+  } else if (stepData.type === "contract") {
+    promptEl.textContent = "One more thing!";
+    card.innerHTML =
+      `<div class="translation-label">Tricky verbs</div>` +
+      `<div class="contract-arrow" style="font-family:'Noto Serif',serif;font-size:34px;margin:0.75rem 0;">` +
+        `<span class="stem">πλέω</span><span class="arrow">→</span><span class="contracted-result">πλεῖς</span>` +
+      `</div>` +
+      `<div class="tutorial-eng">I sail → you sail</div>` +
+      `<div style="color:#888;font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;">${CONTRACT_KEY_TEXT}</div>`;
+  } else {
+    promptEl.textContent = "Learn the endings!";
+    card.innerHTML =
+      `<div class="translation-label">Ending</div>` +
+      `<div class="tutorial-ending">${stepData.ending}</div>` +
+      `<div class="tutorial-eng">means &ldquo;${stepData.eng}&rdquo;</div>` +
+      `<div class="tutorial-example">${stepData.example} = ${stepData.exampleEng}</div>`;
+  }
+
+  nextBtn.textContent = isLast ? "Got it — let's play!" : "Next →";
+}
+
+function tutorialNext() {
+  tutorialIndex++;
+  if (tutorialIndex >= TUTORIAL_STEPS.length) { startFromTutorial(); return; }
+  renderTutorialCard();
+}
+
+function skipTutorial() { startFromTutorial(); }
+
+function startFromTutorial() {
+  document.getElementById("tutorial").classList.add("hidden");
+  startGame();
 }
 
 /* ----------------------------- Flow ----------------------------- */
@@ -635,6 +814,7 @@ function showScreen(s) {
 
   detail.classList.add("hidden");
   key.classList.add("hidden");
+  verbEl.classList.remove("hidden");
   interaction.innerHTML = "";
   document.getElementById("reveal-area").innerHTML = "";
 
@@ -698,14 +878,17 @@ function renderScreenB(r) {
     prompt.textContent = "The vowels squish together!";
     key.textContent = CONTRACT_KEY_TEXT;
   } else {
-    verbEl.innerHTML =
-      `<span class="stem">${r.stem}</span><span class="ending">${THEMATIC_ENDINGS[r.person]}</span>`;
+    // Show the full accented form big, with the bare ending isolated in orange below it.
+    // (We don't string-split the accented word, since the accent sits on the stem vowel.)
+    verbEl.textContent = roundForm(r);
     prompt.textContent = "That ending means...";
+    detail.innerHTML = `ending: <span class="ending">-${THEMATIC_ENDINGS[r.person]}</span>`;
     key.innerHTML = ENDINGS_KEY_HTML;
   }
 
   key.classList.remove("hidden");
-  detail.classList.add("hidden");
+  if (r.type === "contract") detail.classList.add("hidden");
+  else detail.classList.remove("hidden");
 
   interaction.innerHTML =
     `<div class="choices"><button class="choice-btn correct" disabled>${personEnglish(r.person)}</button></div>`;
@@ -753,23 +936,126 @@ function renderMeaningChoices() {
     btn.className = "choice-btn";
     btn.textContent = c;
     btn.addEventListener("click", () =>
-      handleChoice(btn, c === correct, showReveal, "Not quite — try again!"));
+      handleChoice(btn, c === correct, showScreenD, "Not quite — try again!"));
     wrap.appendChild(btn);
   });
   area.appendChild(wrap);
 }
 
+/* Screen D — the verb inside a tiny sentence; tap the subject */
+function buildSentence(r) {
+  if (r.person === "2p" || r.person === "3p") return null; // clean plural subjects aren't on the list
+  const frame = SENTENCE_FRAMES[r.stem];
+  if (!frame) return null;
+
+  const meaning = VERB_LEMMAS[r.stem].meaning;
+  const verbForm = roundForm(r);
+  const verbEng = englishVerb(meaning, r.person);
+
+  let subjGreek, subjEng;
+  if (r.person === "3s") {
+    let candidates = NOUN_SUBJECTS.slice();
+    if (frame.kind === "transitive") candidates = candidates.filter(n => n.eng !== frame.objEng);
+    const n = pick(candidates);
+    subjGreek = n.greek; subjEng = n.eng;
+  } else {
+    subjGreek = PRONOUN_SUBJECTS[r.person];
+    subjEng = PRONOUN_ENG[r.person];
+  }
+
+  const groups = [
+    { text: subjGreek, role: "subject" },
+    { text: verbForm, role: "verb" }
+  ];
+  let tailEng = "";
+  if (frame.kind === "transitive") { groups.push({ text: frame.obj, role: "tail" }); tailEng = " " + frame.objEng; }
+  else if (frame.kind === "prep")  { groups.push({ text: frame.phrase, role: "tail" }); tailEng = " " + frame.phraseEng; }
+
+  const greek = groups.map(g => g.text).join(" ") + ".";
+  let eng = subjEng + " " + verbEng + tailEng + ".";
+  eng = eng.charAt(0).toUpperCase() + eng.slice(1);
+
+  return { groups, greek, eng };
+}
+
+function showScreenD() {
+  step = "D";
+  clearFeedback();
+
+  const sentence = buildSentence(current);
+  if (!sentence) { showReveal(); return; } // skip the sentence step for awkward plurals
+  current._sentence = sentence;
+
+  const verbEl = document.getElementById("verb-display");
+  const interaction = document.getElementById("interaction-area");
+  const detail = document.getElementById("prompt-detail");
+  const key = document.getElementById("endings-key");
+  const prompt = document.getElementById("prompt");
+
+  verbEl.classList.add("hidden");
+  key.classList.add("hidden");
+  interaction.innerHTML = "";
+  document.getElementById("reveal-area").innerHTML = "";
+
+  prompt.textContent = "Who is doing the action?";
+  detail.textContent = "Tap the subject in the sentence!";
+  detail.classList.remove("hidden");
+
+  const wrap = document.createElement("div");
+  wrap.className = "word-buttons";
+  sentence.groups.forEach(g => {
+    const btn = document.createElement("button");
+    btn.className = "word-btn";
+    btn.textContent = g.text;
+    if (g.role === "verb") {
+      btn.classList.add("verb-highlight");
+      btn.disabled = true;
+    } else {
+      btn.addEventListener("click", () => handleSubjectTap(btn, g.role === "subject"));
+    }
+    wrap.appendChild(btn);
+  });
+  interaction.appendChild(wrap);
+}
+
+function handleSubjectTap(btn, isCorrect) {
+  if (locked) return;
+  if (isCorrect) {
+    locked = true;
+    btn.classList.add("correct");
+    document.querySelectorAll(".word-btn").forEach(b => b.disabled = true);
+    setFeedback("🎉 Yes!", "success");
+    spawnStars(btn);
+    setTimeout(() => { locked = false; showReveal(); }, 1000);
+  } else {
+    locked = true;
+    madeErrorThisRound = true;
+    btn.classList.add("wrong");
+    setFeedback("Not quite — who's doing it?", "error");
+    setTimeout(() => { btn.classList.remove("wrong"); locked = false; }, 600);
+  }
+}
+
 function showReveal() {
   const reveal = document.getElementById("reveal-area");
   const r = current;
-  const meaning = VERB_LEMMAS[r.stem].meaning;
-  const form = roundForm(r);
-  const translation = personEnglish(r.person) + " " + englishVerb(meaning, r.person);
+
+  let topGreek, topEng, label;
+  if (r._sentence) {
+    topGreek = r._sentence.greek;
+    topEng = r._sentence.eng;
+    label = "Sentence";
+  } else {
+    const meaning = VERB_LEMMAS[r.stem].meaning;
+    topGreek = roundForm(r);
+    topEng = personEnglish(r.person) + " " + englishVerb(meaning, r.person);
+    label = "Translation";
+  }
 
   reveal.innerHTML = `
     <div class="translation-box">
-      <div class="translation-label">Translation</div>
-      <div class="translation-text">${form} = <span class="subj">${translation}</span></div>
+      <div class="translation-label">${label}</div>
+      <div class="translation-text">${topGreek}<br><span class="subj">${topEng}</span></div>
     </div>
     <button class="next-btn" onclick="finishRound()">Next →</button>
   `;
