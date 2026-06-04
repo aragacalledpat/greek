@@ -523,7 +523,6 @@
 const VERB_LEMMAS = {
   "παιδευ":  { meaning: "educate", type: "thematic" },
   "πεμπ":    { meaning: "send",    type: "thematic" },
-  "ἐχ":      { meaning: "have",    type: "thematic" },
   "γραφ":    { meaning: "write",   type: "thematic" },
   "βλεπ":    { meaning: "see",     type: "thematic" },
   "βαλλ":    { meaning: "throw",   type: "thematic" },
@@ -531,15 +530,13 @@ const VERB_LEMMAS = {
   "βαιν":    { meaning: "go",      type: "thematic" },
   "φροντιζ": { meaning: "worry",   type: "thematic" },
   "εἰσβαιν": { meaning: "embark",  type: "compound" },
-  "πλε":     { meaning: "sail",    type: "contract-e" },
-  "ὁρα":     { meaning: "see",     type: "contract-a" }
+  "πλε":     { meaning: "sail",    type: "contract-e" }
 };
 
 // Fully accented thematic forms (hardcoded so on-screen Greek is always accented).
 const THEMATIC_FORMS = {
   "παιδευ":  { "1s":"παιδεύω","2s":"παιδεύεις","3s":"παιδεύει","1p":"παιδεύομεν","2p":"παιδεύετε","3p":"παιδεύουσι" },
   "πεμπ":    { "1s":"πέμπω","2s":"πέμπεις","3s":"πέμπει","1p":"πέμπομεν","2p":"πέμπετε","3p":"πέμπουσι" },
-  "ἐχ":      { "1s":"ἔχω","2s":"ἔχεις","3s":"ἔχει","1p":"ἔχομεν","2p":"ἔχετε","3p":"ἔχουσι" },
   "γραφ":    { "1s":"γράφω","2s":"γράφεις","3s":"γράφει","1p":"γράφομεν","2p":"γράφετε","3p":"γράφουσι" },
   "βλεπ":    { "1s":"βλέπω","2s":"βλέπεις","3s":"βλέπει","1p":"βλέπομεν","2p":"βλέπετε","3p":"βλέπουσι" },
   "βαλλ":    { "1s":"βάλλω","2s":"βάλλεις","3s":"βάλλει","1p":"βάλλομεν","2p":"βάλλετε","3p":"βάλλουσι" },
@@ -567,17 +564,12 @@ const CONTRACT_FORMS = {
   "πλε": { // ε-contract
     "1s": "πλέω",  "2s": "πλεῖς", "3s": "πλεῖ",
     "1p": "πλέομεν","2p": "πλεῖτε","3p": "πλέουσι"
-  },
-  "ὁρα": { // α-contract
-    "1s": "ὁρῶ",   "2s": "ὁρᾷς",  "3s": "ὁρᾷ",
-    "1p": "ὁρῶμεν","2p": "ὁρᾶτε", "3p": "ὁρῶσι"
   }
 };
 
 // Raw pieces for Screen B's uncontracted → contracted reveal: [stem, ending, contracted]
 const CONTRACT_RAW = {
-  "πλε": { "2s": ["πλε", "εις", "πλεῖς"], "3s": ["πλε","ει","πλεῖ"], "1p":["πλε","ομεν","πλέομεν"], "2p":["πλε","ετε","πλεῖτε"], "3p":["πλε","ουσι","πλέουσι"], "1s":["πλε","ω","πλέω"] },
-  "ὁρα": { "2s": ["ὁρα", "εις", "ὁρᾷς"], "3s": ["ὁρα","ει","ὁρᾷ"], "1p":["ὁρα","ομεν","ὁρῶμεν"], "2p":["ὁρα","ετε","ὁρᾶτε"], "3p":["ὁρα","ουσι","ὁρῶσι"], "1s":["ὁρα","ω","ὁρῶ"] }
+  "πλε": { "2s": ["πλε", "εις", "πλεῖς"], "3s": ["πλε","ει","πλεῖ"], "1p":["πλε","ομεν","πλέομεν"], "2p":["πλε","ετε","πλεῖτε"], "3p":["πλε","ουσι","πλέουσι"], "1s":["πλε","ω","πλέω"] }
 };
 
 // Compound verbs: prefix + base verb. Conjugation is fully regular; the prefix just rides along.
@@ -599,14 +591,12 @@ const SENTENCE_FRAMES = {
   "γραφ":    { kind:"transitive", obj:"τοὺς λόγους", objEng:"the words" },
   "πεμπ":    { kind:"transitive", obj:"τὰ δῶρα",     objEng:"the gifts" },
   "βαλλ":    { kind:"transitive", obj:"τὸ βιβλίον",  objEng:"the book" },
-  "ἐχ":      { kind:"transitive", obj:"τὴν τέχνην",  objEng:"the skill" },
   "παιδευ":  { kind:"transitive", obj:"τὸν ναύτην",  objEng:"the sailor" },
   "ἀκου":    { kind:"transitive", obj:"τὸν ῥαψῳδόν", objEng:"the rhapsode" },
   "φροντιζ": { kind:"intransitive" },
   "βαιν":    { kind:"prep", phrase:"πρὸς τὴν ἀγοράν", phraseEng:"to the marketplace" },
   "εἰσβαιν": { kind:"prep", phrase:"εἰς τὸ πλοῖον",   phraseEng:"onto the ship" },
-  "πλε":     { kind:"prep", phrase:"εἰς τὴν νῆσον",   phraseEng:"to the island" },
-  "ὁρα":     { kind:"transitive", obj:"τὴν νῆσον",    objEng:"the island" }
+  "πλε":     { kind:"prep", phrase:"εἰς τὴν νῆσον",   phraseEng:"to the island" }
 };
 
 const PRONOUN_SUBJECTS = { "1s":"ἐγώ", "2s":"σύ", "1p":"ἡμεῖς" };
